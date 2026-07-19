@@ -46,17 +46,6 @@ async def test_gitea_create_issue_rejects_empty_title():
 
 
 @pytest.mark.asyncio
-def test_pocket_id_lists_validated_api_operations():
-    operations = server.pocket_id_list_api_operations()
-
-    assert {operation["operation"] for operation in operations} >= {
-        "list_users",
-        "create_oidc_client",
-        "update_user_groups",
-    }
-
-
-@pytest.mark.asyncio
 async def test_gitea_list_repositories_rejects_invalid_pagination():
     with pytest.raises(ValueError, match="limit must be between"):
         await server.gitea_list_repositories(page=1, limit=101)

@@ -1,6 +1,6 @@
 import pytest
 
-from labmcp.pocket_id_api import call_operation, list_operations
+from labmcp.pocket_id_api import OPERATIONS, PocketIDOperationProvider, call_operation
 
 
 class FakeClient:
@@ -12,11 +12,18 @@ class FakeClient:
         return {"ok": True}
 
 
-def test_operation_inventory_covers_core_pocket_id_resources() -> None:
-    names = {operation["operation"] for operation in list_operations()}
+@pytest.mark.asyncio
+async def test_operation_provider_exposes_one_tool_per_supported_operation() -> None:
+    provider = PocketIDOperationProvider(lambda: FakeClient())
+    names = {tool.name for tool in await provider.list_tools()}
 
-    assert {"list_users", "list_user_groups", "list_oidc_clients", "list_api_keys"} <= names
-    assert "update_client_logo" not in names
+    assert {
+        "pocket_id_list_users",
+        "pocket_id_list_user_groups",
+        "pocket_id_list_oidc_clients",
+        "pocket_id_list_api_keys",
+    } <= names
+    assert len(names) == len(OPERATIONS)
 
 
 @pytest.mark.asyncio

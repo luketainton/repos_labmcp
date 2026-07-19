@@ -10,20 +10,18 @@ Gitea:
 - `gitea_get_repository`
 - `gitea_list_issues`
 - `gitea_create_issue`
-- `gitea_list_api_operations` lists operations from Gitea's live Swagger document
-- `gitea_call_api` calls a validated Gitea JSON/form operation
+- one individually discoverable `gitea_*` tool for every supported Gitea Swagger operation
 
 Pocket ID:
 
 - `pocket_id_openid_configuration`
 - `pocket_id_health`
-- `pocket_id_list_api_operations` lists documented Pocket ID operations
-- `pocket_id_call_api` calls a validated Pocket ID JSON/form operation
+- one individually discoverable `pocket_id_*` tool for every supported Pocket ID operation
 - `labmcp_get_version`
 
-Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. The validated operation registry covers the documented JSON and form endpoints, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.
+Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. Each supported JSON/form endpoint is exposed as its own tool, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.
 
-Gitea's validated operation registry is loaded from `<GITEA_URL>/swagger.v1.json` and cached. It supports the documented non-binary operations for the running Gitea version; use `gitea_list_api_operations(refresh=true)` after a Gitea upgrade. The Gitea token is supplied using Gitea's `Authorization: token ...` scheme.
+Gitea's tools are generated from `<GITEA_URL>/swagger.v1.json` and cached when the server first serves tool discovery. This exposes the documented non-binary operations for the running Gitea version as individual `gitea_*` tools. Restart labmcp after a Gitea upgrade to rebuild the catalogue. The Gitea token is supplied using Gitea's `Authorization: token ...` scheme.
 
 ## Local development
 

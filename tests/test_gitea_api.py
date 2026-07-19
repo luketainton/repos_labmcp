@@ -1,6 +1,6 @@
 import pytest
 
-from labmcp.gitea_api import call_operation, parse_operations
+from labmcp.gitea_api import GiteaOperationProvider, _tool_name, call_operation, parse_operations
 
 
 class FakeClient:
@@ -52,6 +52,7 @@ async def test_call_operation_validates_and_encodes_path_parameters(
     operations = parse_operations(
         {"paths": {"/repos/{owner}/{repo}": {"get": {"operationId": "repoGet"}}}}
     )
+
     async def get_operations(_client):
         return operations
 
@@ -76,6 +77,7 @@ async def test_call_operation_validates_and_encodes_path_parameters(
 @pytest.mark.asyncio
 async def test_call_operation_rejects_an_unknown_operation(monkeypatch: pytest.MonkeyPatch) -> None:
     client = FakeClient()
+
     async def get_operations(_client):
         return {}
 
@@ -83,3 +85,34 @@ async def test_call_operation_rejects_an_unknown_operation(monkeypatch: pytest.M
 
     with pytest.raises(ValueError, match="Unknown Gitea operation"):
         await call_operation(client, "unknown")
+
+
+@pytest.mark.asyncio
+async def test_operation_provider_exposes_a_tool_for_each_swagger_operation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = FakeClient()
+    operations = parse_operations(
+        {
+            "paths": {
+                "/repos/{owner}/{repo}": {"get": {"operationId": "repoGet"}},
+                "/user/repos": {"get": {"operationId": "repoListCurrentUser"}},
+            }
+        }
+    )
+
+    async def get_operations(_client):
+        return operations
+
+    monkeypatch.setattr("labmcp.gitea_api._get_operations", get_operations)
+    provider = GiteaOperationProvider(lambda: client)
+
+    assert {tool.name for tool in await provider.list_tools()} == {
+        "gitea_repo_get",
+        "gitea_repo_list_current_user",
+    }
+
+
+def test_tool_names_distinguish_acronyms() -> None:
+    assert _tool_name("userGetOauth2Application") == "gitea_user_get_oauth2_application"
+    assert _tool_name("userGetOAuth2Application") == "gitea_user_get_o_auth2_application"

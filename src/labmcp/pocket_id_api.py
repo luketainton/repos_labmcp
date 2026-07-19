@@ -1,9 +1,12 @@
 """Validated access to Pocket ID's documented JSON API operations."""
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 from urllib.parse import quote
+
+from fastmcp.server.providers import Provider
+from fastmcp.tools import Tool
 
 from .clients import ServiceClient
 
@@ -13,6 +16,9 @@ class PocketIDOperation:
     method: Literal["GET", "POST", "PUT", "DELETE"]
     path: str
     encoding: Literal["json", "form"] = "json"
+
+
+ServiceClientFactory = Callable[[], ServiceClient]
 
 
 # Generated from https://pocket-id.org/swagger.yaml. Binary image upload/download
@@ -55,9 +61,7 @@ OPERATIONS: dict[str, PocketIDOperation] = {
     "update_custom_claims_for_a_user_group": PocketIDOperation(
         "PUT", "/api/custom-claims/user-group/{userGroupId}"
     ),
-    "update_custom_claims_for_a_user": PocketIDOperation(
-        "PUT", "/api/custom-claims/user/{userId}"
-    ),
+    "update_custom_claims_for_a_user": PocketIDOperation("PUT", "/api/custom-claims/user/{userId}"),
     "list_oidc_clients": PocketIDOperation("GET", "/api/oidc/clients"),
     "create_oidc_client": PocketIDOperation("POST", "/api/oidc/clients"),
     "delete_oidc_client": PocketIDOperation("DELETE", "/api/oidc/clients/{id}"),
@@ -96,9 +100,7 @@ OPERATIONS: dict[str, PocketIDOperation] = {
     "create_scim_service_provider": PocketIDOperation("POST", "/api/scim/service-provider"),
     "delete_scim_service_provider": PocketIDOperation("DELETE", "/api/scim/service-provider/{id}"),
     "update_scim_service_provider": PocketIDOperation("PUT", "/api/scim/service-provider/{id}"),
-    "sync_scim_service_provider": PocketIDOperation(
-        "POST", "/api/scim/service-provider/{id}/sync"
-    ),
+    "sync_scim_service_provider": PocketIDOperation("POST", "/api/scim/service-provider/{id}/sync"),
     "sign_up": PocketIDOperation("POST", "/api/signup"),
     "list_signup_tokens": PocketIDOperation("GET", "/api/signup-tokens"),
     "create_signup_token": PocketIDOperation("POST", "/api/signup-tokens"),
@@ -144,15 +146,6 @@ OPERATIONS: dict[str, PocketIDOperation] = {
 }
 
 
-def list_operations() -> list[dict[str, str]]:
-    """Return names and request details for supported Pocket ID API operations."""
-    return [
-        {"operation": name, "method": operation.method, "path": operation.path,
-         "encoding": operation.encoding}
-        for name, operation in sorted(OPERATIONS.items())
-    ]
-
-
 async def call_operation(
     client: ServiceClient,
     operation_name: str,
@@ -190,6 +183,50 @@ async def call_operation(
         json=body,
         data=form,
     )
+
+
+class PocketIDOperationProvider(Provider):
+    """Expose one MCP tool per documented non-binary Pocket ID operation."""
+
+    def __init__(self, client_factory: ServiceClientFactory, auth: Any = None) -> None:
+        super().__init__()
+        self._tools = tuple(
+            _make_operation_tool(name, operation, client_factory, auth)
+            for name, operation in sorted(OPERATIONS.items())
+        )
+
+    async def _list_tools(self) -> Sequence[Tool]:
+        return self._tools
+
+
+def _make_operation_tool(
+    operation_name: str,
+    operation: PocketIDOperation,
+    client_factory: ServiceClientFactory,
+    auth: Any,
+) -> Tool:
+    async def execute(
+        path_params: dict[str, str] | None = None,
+        query: dict[str, Any] | None = None,
+        body: Any = None,
+        form: dict[str, str] | None = None,
+    ) -> Any:
+        return await call_operation(
+            client_factory(),
+            operation_name,
+            path_params=path_params,
+            query=query,
+            body=body,
+            form=form,
+        )
+
+    tool_name = f"pocket_id_{operation_name}"
+    execute.__name__ = tool_name
+    description = (
+        f"Pocket ID {operation.method} {operation.path}. "
+        f"Use {'form' if operation.encoding == 'form' else 'JSON'} request data."
+    )
+    return Tool.from_function(execute, name=tool_name, description=description, auth=auth)
 
 
 def _path_parameter_names(path: str) -> set[str]:

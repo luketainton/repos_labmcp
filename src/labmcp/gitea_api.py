@@ -1,9 +1,13 @@
 """Validated access to the configured Gitea instance's published Swagger API."""
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+import re
 from typing import Any
 from urllib.parse import quote
+
+from fastmcp.server.providers import Provider
+from fastmcp.tools import Tool
 
 from .clients import ServiceClient
 
@@ -16,6 +20,9 @@ class GiteaOperation:
     method: str
     path: str
     encoding: str
+
+
+ServiceClientFactory = Callable[[], ServiceClient]
 
 
 def parse_operations(specification: Mapping[str, Any]) -> dict[str, GiteaOperation]:
@@ -50,20 +57,6 @@ def parse_operations(specification: Mapping[str, Any]) -> dict[str, GiteaOperati
     return operations
 
 
-async def list_operations(client: ServiceClient, *, refresh: bool = False) -> list[dict[str, str]]:
-    """Return all supported operations from the configured Gitea instance."""
-    operations = await _get_operations(client, refresh=refresh)
-    return [
-        {
-            "operation": name,
-            "method": operation.method,
-            "path": operation.path,
-            "encoding": operation.encoding,
-        }
-        for name, operation in sorted(operations.items())
-    ]
-
-
 async def call_operation(
     client: ServiceClient,
     operation_name: str,
@@ -94,6 +87,64 @@ async def call_operation(
     for name, value in values.items():
         path = path.replace(f"{{{name}}}", quote(value, safe=""))
     return await client.request(operation.method, path, params=query, json=body, data=form)
+
+
+class GiteaOperationProvider(Provider):
+    """Expose one MCP tool per non-binary operation in Gitea's live Swagger API."""
+
+    def __init__(self, client_factory: ServiceClientFactory, auth: Any = None) -> None:
+        super().__init__()
+        self._client_factory = client_factory
+        self._auth = auth
+        self._tools: dict[str, tuple[Tool, ...]] = {}
+
+    async def _list_tools(self) -> Sequence[Tool]:
+        client = self._client_factory()
+        operations = await _get_operations(client)
+        cache_key = client.base_url or ""
+        if cache_key not in self._tools:
+            self._tools[cache_key] = tuple(
+                _make_operation_tool(name, operation, self._client_factory, self._auth)
+                for name, operation in sorted(operations.items())
+            )
+        return self._tools[cache_key]
+
+
+def _make_operation_tool(
+    operation_name: str,
+    operation: GiteaOperation,
+    client_factory: ServiceClientFactory,
+    auth: Any,
+) -> Tool:
+    async def execute(
+        path_params: dict[str, str] | None = None,
+        query: dict[str, Any] | None = None,
+        body: Any = None,
+        form: dict[str, Any] | None = None,
+    ) -> Any:
+        return await call_operation(
+            client_factory(),
+            operation_name,
+            path_params=path_params,
+            query=query,
+            body=body,
+            form=form,
+        )
+
+    tool_name = _tool_name(operation_name)
+    execute.__name__ = tool_name
+    description = (
+        f"Gitea {operation.method} {operation.path}. "
+        f"Use {'form' if operation.encoding == 'form' else 'JSON'} request data."
+    )
+    return Tool.from_function(execute, name=tool_name, description=description, auth=auth)
+
+
+def _tool_name(operation_name: str) -> str:
+    """Convert Gitea's camel-case Swagger ID into a stable MCP tool name."""
+    snake_case = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", operation_name)
+    snake_case = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", snake_case).lower()
+    return f"gitea_{re.sub(r'[^a-z0-9_]+', '_', snake_case).strip('_')}"
 
 
 async def _get_operations(
