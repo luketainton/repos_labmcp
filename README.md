@@ -85,7 +85,7 @@ Pocket ID normally provides groups in the `groups` claim. To authorize from a cu
 
 Pull requests run `.gitea/workflows/ci.yml`, which installs dependencies with `uv`, runs Ruff, executes tests through Coverage.py, writes `testresults.xml` and `coverage.xml`, prints the coverage summary, compiles the Python sources, and builds a Docker image.
 
-`.gitea/workflows/sonar.yml` runs the same Ruff, test, and Coverage.py commands as CI, then normalizes the coverage paths and submits the reports to SonarQube. Configure `SONAR_URL` as a repository variable and `SONAR_TOKEN` as a repository secret.
+`.gitea/workflows/sonar.yml` runs the same Ruff, test, and Coverage.py commands as CI, then submits the reports to SonarQube. Configure `SONAR_URL` as a repository variable and `SONAR_TOKEN` as a repository secret.
 
 ## Docker
 

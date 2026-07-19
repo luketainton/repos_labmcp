@@ -34,10 +34,6 @@ jobs:
           uv run coverage report
           uv run coverage xml -q -o coverage.xml
 
-      - name: Normalize coverage paths for SonarQube
-        run: |
-          sed -i 's@${{ gitea.workspace }}@/github/workspace@g' coverage.xml
-
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v8.2
         env:
