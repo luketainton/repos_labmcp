@@ -16,7 +16,7 @@ labmcp = "labmcp.server:main"
 [dependency-groups]
 dev = [
     "coverage[toml]>=7.6,<8.0",
-    "pytest>=8.0,<9.0",
+    "pytest>=9.1,<9.2",
     "pytest-asyncio>=0.23,<2.0",
     "ruff>=0.6,<1.0",
 ]
