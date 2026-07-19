@@ -14,5 +14,10 @@ COPY src ./src
 RUN uv sync --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
+ENV HOME=/home/labmcp \
+    XDG_DATA_HOME=/home/labmcp/.local/share
+
+RUN mkdir -p "$XDG_DATA_HOME" && chown -R 10001:10001 /home/labmcp
+
 USER 10001:10001
 ENTRYPOINT ["labmcp"]

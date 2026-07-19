@@ -99,6 +99,10 @@ docker run --rm -i \
 
 For HTTP transport, also pass `-e MCP_TRANSPORT=http -p 8000:8000`.
 
+When using `MCP_AUTH_MODE=oidc_proxy`, mount a persistent volume at
+`/home/labmcp/.local/share`. FastMCP stores OAuth client-registration state there;
+without it, clients may need to register again after the container is recreated.
+
 ## Releases
 
 Pushing a tag such as `v0.1.0` starts `.gitea/workflows/release.yml`. The workflow builds and pushes both `${PACKAGES_REGISTRY_URL}/owner/labmcp:v0.1.0` and `:latest`; configure `PACKAGES_REGISTRY_URL` and `ACTIONS_USERNAME` as variables plus `ACTIONS_TOKEN` as a secret.
