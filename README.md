@@ -15,10 +15,11 @@ Pocket ID:
 
 - `pocket_id_openid_configuration`
 - `pocket_id_health`
-- `pocket_id_get_json` for documented Pocket ID API endpoints
+- `pocket_id_list_api_operations` lists documented Pocket ID operations
+- `pocket_id_call_api` calls a validated Pocket ID JSON/form operation
 - `labmcp_get_version`
 
-Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. The generic JSON tool intentionally supports GET only, so mutating identity-management operations cannot be triggered accidentally.
+Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. The validated operation registry covers the documented JSON and form endpoints, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.
 
 ## Local development
 

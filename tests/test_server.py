@@ -46,12 +46,14 @@ async def test_gitea_create_issue_rejects_empty_title():
 
 
 @pytest.mark.asyncio
-async def test_pocket_id_get_json_only_accepts_single_leading_slash():
-    with pytest.raises(ValueError, match="absolute path"):
-        await server.pocket_id_get_json("api/users")
+def test_pocket_id_lists_validated_api_operations():
+    operations = server.pocket_id_list_api_operations()
 
-    with pytest.raises(ValueError, match="absolute path"):
-        await server.pocket_id_get_json("//api/users")
+    assert {operation["operation"] for operation in operations} >= {
+        "list_users",
+        "create_oidc_client",
+        "update_user_groups",
+    }
 
 
 @pytest.mark.asyncio

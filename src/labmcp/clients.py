@@ -35,6 +35,7 @@ class ServiceClient:
         *,
         params: Mapping[str, Any] | None = None,
         json: Any = None,
+        data: Mapping[str, str] | None = None,
     ) -> Any:
         headers = {"Accept": "application/json"}
         if self.token:
@@ -42,9 +43,14 @@ class ServiceClient:
                 f"{self.auth_prefix} {self.token}" if self.auth_prefix else self.token
             )
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.request(
-                method, self._url(path), params=params, json=json, headers=headers
-            )
+            request_kwargs: dict[str, Any] = {
+                "params": params,
+                "json": json,
+                "headers": headers,
+            }
+            if data is not None:
+                request_kwargs["data"] = data
+            response = await client.request(method, self._url(path), **request_kwargs)
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:

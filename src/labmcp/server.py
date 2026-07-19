@@ -6,6 +6,7 @@ from .auth import create_auth_provider, ensure_network_transport_is_authenticate
 from .authorization import require_service_access
 from .clients import gitea_client, pocket_id_client
 from .config import get_settings
+from .pocket_id_api import call_operation, list_operations
 from .version import get_version
 
 _settings = get_settings()
@@ -91,11 +92,34 @@ async def pocket_id_health() -> Any:
 
 
 @mcp.tool(auth=_service_auth("pocket_id"))
-async def pocket_id_get_json(path: str) -> Any:
-    """GET a JSON endpoint on Pocket ID, useful for deployments with an enabled API."""
-    if not path.startswith("/") or path.startswith("//"):
-        raise ValueError("path must be an absolute path beginning with a single '/'")
-    return await pocket_id_client(get_settings()).request("GET", path)
+def pocket_id_list_api_operations() -> list[dict[str, str]]:
+    """List validated Pocket ID API operations, methods, paths, and body encoding."""
+    return list_operations()
+
+
+@mcp.tool(auth=_service_auth("pocket_id"))
+async def pocket_id_call_api(
+    operation: str,
+    *,
+    path_params: dict[str, str] | None = None,
+    query: dict[str, Any] | None = None,
+    body: Any = None,
+    form: dict[str, str] | None = None,
+) -> Any:
+    """Call a documented Pocket ID JSON/form API operation by its validated name.
+
+    Use pocket_id_list_api_operations first to discover operation names and paths.
+    This supports all documented non-binary operations; image upload/download endpoints
+    are excluded because they require an attachment interface.
+    """
+    return await call_operation(
+        pocket_id_client(get_settings()),
+        operation,
+        path_params=path_params,
+        query=query,
+        body=body,
+        form=form,
+    )
 
 
 def main() -> None:
