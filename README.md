@@ -52,6 +52,8 @@ MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
 
 By default, `MCP_AUTH_OIDC_CONFIG_URL` is derived as `<POCKET_ID_URL>/.well-known/openid-configuration`, and the callback path is `/auth/callback`. Set them explicitly if your Pocket ID issuer or reverse proxy path differs from `POCKET_ID_URL`.
 
+Pocket ID rejects the OAuth `resource` indicator used by some MCP clients. The server therefore defaults `MCP_AUTH_OIDC_FORWARD_RESOURCE=false`; leave it unchanged for Pocket ID.
+
 After login, MCP clients authenticate with bearer tokens:
 
 ```http

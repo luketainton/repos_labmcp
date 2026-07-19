@@ -85,6 +85,7 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         mcp_auth_oidc_client_id="labmcp",
         mcp_auth_oidc_client_secret="secret",
         mcp_auth_oidc_jwt_signing_key="signing-key",
+        mcp_auth_oidc_forward_resource=True,
         mcp_auth_jwt_audience="labmcp",
         mcp_auth_required_scopes="openid, profile",
     )
@@ -99,6 +100,7 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         "base_url": "https://labmcp.example.com",
         "redirect_path": "/auth/callback",
         "required_scopes": ["openid", "profile"],
+        "forward_resource": True,
         "audience": "labmcp",
         "jwt_signing_key": "signing-key",
     }
