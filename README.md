@@ -1,0 +1,3 @@
+# labmcp
+
+Home Lab MCP
