@@ -55,6 +55,7 @@ MCP_AUTH_MODE=oidc_proxy
 MCP_AUTH_BASE_URL=https://labmcp.example.com
 MCP_AUTH_OIDC_CLIENT_ID=<pocket-id-client-id>
 MCP_AUTH_OIDC_CLIENT_SECRET=<pocket-id-client-secret>
+MCP_AUTH_OIDC_EXTRA_SCOPES=offline_access
 MCP_AUTH_OIDC_JWT_SIGNING_KEY=<stable-random-secret>
 MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
 ```
@@ -62,6 +63,8 @@ MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
 By default, `MCP_AUTH_OIDC_CONFIG_URL` is derived as `<POCKET_ID_URL>/.well-known/openid-configuration`, and the callback path is `/auth/callback`. Set them explicitly if your Pocket ID issuer or reverse proxy path differs from `POCKET_ID_URL`.
 
 Pocket ID rejects the OAuth `resource` indicator used by some MCP clients. The server therefore defaults `MCP_AUTH_OIDC_FORWARD_RESOURCE=false`; leave it unchanged for Pocket ID.
+
+When using `oidc_proxy`, `MCP_AUTH_OIDC_EXTRA_SCOPES` defaults to `offline_access`. FastMCP stores and rotates the upstream refresh token, then issues an MCP refresh token to clients. The configured Pocket ID OAuth client must permit the `offline_access` scope. Set the variable to an empty value to disable the extra scope, or provide a comma-separated list of provider-specific extra scopes.
 
 After login, MCP clients authenticate with bearer tokens:
 

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     mcp_auth_oidc_client_id: str | None = None
     mcp_auth_oidc_client_secret: SecretStr | None = None
     mcp_auth_oidc_redirect_path: str = "/auth/callback"
+    mcp_auth_oidc_extra_scopes: str = "offline_access"
     mcp_auth_oidc_jwt_signing_key: SecretStr | None = None
     mcp_auth_oidc_forward_resource: bool = False
 

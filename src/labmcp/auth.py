@@ -83,6 +83,24 @@ def _create_oidc_proxy_auth_provider(settings: Settings) -> Any:
                     return {claim_name: claims[claim_name]}
             return None
 
+        def _build_upstream_authorize_url(
+            self, txn_id: str, transaction: dict[str, Any]
+        ) -> str:
+            """Request configured upstream scopes, including offline access.
+
+            FastMCP handles storing, refreshing, rotating, and revoking upstream
+            refresh tokens. The extra scopes only need to be added to the IdP
+            authorization request; they must not be required in the access-token
+            scope claim because some providers omit ``offline_access`` there.
+            """
+            transaction = dict(transaction)
+            scopes = list(transaction.get("scopes") or self.required_scopes or [])
+            for scope in _parse_scopes(settings.mcp_auth_oidc_extra_scopes) or []:
+                if scope not in scopes:
+                    scopes.append(scope)
+            transaction["scopes"] = scopes
+            return super()._build_upstream_authorize_url(txn_id, transaction)
+
     kwargs: dict[str, Any] = {
         "config_url": config_url,
         "client_id": settings.mcp_auth_oidc_client_id,

@@ -78,6 +78,11 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         def __init__(self, **kwargs: object) -> None:
             self.kwargs = kwargs
 
+        def _build_upstream_authorize_url(
+            self, txn_id: str, transaction: dict[str, object]
+        ) -> dict[str, object]:
+            return transaction
+
     oidc_module = types.ModuleType("fastmcp.server.auth.oidc_proxy")
     oidc_module.OIDCProxy = FakeOIDCProxy
     monkeypatch.setitem(sys.modules, "fastmcp.server.auth.oidc_proxy", oidc_module)
@@ -108,6 +113,40 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         "audience": "labmcp",
         "jwt_signing_key": "signing-key",
     }
+
+    assert provider._build_upstream_authorize_url(
+        "transaction", {"scopes": ["openid", "profile"]}
+    )["scopes"] == ["openid", "profile", "offline_access"]
+
+
+def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeOIDCProxy:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def _build_upstream_authorize_url(
+            self, txn_id: str, transaction: dict[str, object]
+        ) -> dict[str, object]:
+            return transaction
+
+    oidc_module = types.ModuleType("fastmcp.server.auth.oidc_proxy")
+    oidc_module.OIDCProxy = FakeOIDCProxy
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth.oidc_proxy", oidc_module)
+
+    settings = Settings(
+        pocket_id_url="https://id.example.com",
+        mcp_auth_mode="oidc_proxy",
+        mcp_auth_base_url="https://labmcp.example.com",
+        mcp_auth_oidc_client_id="labmcp",
+        mcp_auth_oidc_client_secret="secret",
+        mcp_auth_oidc_extra_scopes="offline_access,groups",
+    )
+
+    provider = create_auth_provider(settings)
+
+    assert provider._build_upstream_authorize_url(
+        "transaction", {"scopes": ["openid", "offline_access"]}
+    )["scopes"] == ["openid", "offline_access", "groups"]
 
 
 def test_decode_jwt_claims_extracts_payload() -> None:
