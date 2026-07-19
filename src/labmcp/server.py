@@ -6,6 +6,8 @@ from .auth import create_auth_provider, ensure_network_transport_is_authenticate
 from .authorization import require_service_access
 from .clients import gitea_client, pocket_id_client
 from .config import get_settings
+from .gitea_api import call_operation as call_gitea_operation
+from .gitea_api import list_operations as list_gitea_operations
 from .pocket_id_api import call_operation, list_operations
 from .version import get_version
 
@@ -73,6 +75,40 @@ async def gitea_create_issue(owner: str, repo: str, title: str, body: str = "") 
         raise ValueError("title must not be empty")
     return await gitea_client(get_settings()).request(
         "POST", f"/api/v1/repos/{owner}/{repo}/issues", json={"title": title, "body": body}
+    )
+
+
+@mcp.tool(auth=_service_auth("gitea"))
+async def gitea_list_api_operations(refresh: bool = False) -> list[dict[str, str]]:
+    """List validated Gitea Swagger operations, methods, paths, and body encoding.
+
+    The operation registry is read from the configured Gitea instance and cached.
+    Set refresh=true after upgrading Gitea to reload its Swagger document.
+    """
+    return await list_gitea_operations(gitea_client(get_settings()), refresh=refresh)
+
+
+@mcp.tool(auth=_service_auth("gitea"))
+async def gitea_call_api(
+    operation: str,
+    *,
+    path_params: dict[str, str] | None = None,
+    query: dict[str, Any] | None = None,
+    body: Any = None,
+    form: dict[str, Any] | None = None,
+) -> Any:
+    """Call a documented Gitea JSON/form operation by its Swagger operation ID.
+
+    Use gitea_list_api_operations first. Binary file upload/download endpoints are
+    excluded because they require an MCP attachment interface.
+    """
+    return await call_gitea_operation(
+        gitea_client(get_settings()),
+        operation,
+        path_params=path_params,
+        query=query,
+        body=body,
+        form=form,
     )
 
 

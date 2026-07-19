@@ -10,6 +10,8 @@ Gitea:
 - `gitea_get_repository`
 - `gitea_list_issues`
 - `gitea_create_issue`
+- `gitea_list_api_operations` lists operations from Gitea's live Swagger document
+- `gitea_call_api` calls a validated Gitea JSON/form operation
 
 Pocket ID:
 
@@ -20,6 +22,8 @@ Pocket ID:
 - `labmcp_get_version`
 
 Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. The validated operation registry covers the documented JSON and form endpoints, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.
+
+Gitea's validated operation registry is loaded from `<GITEA_URL>/swagger.v1.json` and cached. It supports the documented non-binary operations for the running Gitea version; use `gitea_list_api_operations(refresh=true)` after a Gitea upgrade. The Gitea token is supplied using Gitea's `Authorization: token ...` scheme.
 
 ## Local development
 

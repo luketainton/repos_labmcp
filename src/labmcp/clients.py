@@ -35,7 +35,7 @@ class ServiceClient:
         *,
         params: Mapping[str, Any] | None = None,
         json: Any = None,
-        data: Mapping[str, str] | None = None,
+        data: Mapping[str, Any] | None = None,
     ) -> Any:
         headers = {"Accept": "application/json"}
         if self.token:
