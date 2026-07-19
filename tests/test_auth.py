@@ -3,7 +3,11 @@ import types
 
 import pytest
 
-from labmcp.auth import create_auth_provider, ensure_network_transport_is_authenticated
+from labmcp.auth import (
+    _decode_jwt_claims,
+    create_auth_provider,
+    ensure_network_transport_is_authenticated,
+)
 from labmcp.config import Settings
 
 
@@ -104,3 +108,13 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         "audience": "labmcp",
         "jwt_signing_key": "signing-key",
     }
+
+
+def test_decode_jwt_claims_extracts_payload() -> None:
+    token = "eyJhbGciOiJub25lIn0.eyJncm91cHMiOlsiZ29kbW9kZSJdfQ."
+
+    assert _decode_jwt_claims(token) == {"groups": ["godmode"]}
+
+
+def test_decode_jwt_claims_ignores_opaque_tokens() -> None:
+    assert _decode_jwt_claims("opaque-access-token") == {}

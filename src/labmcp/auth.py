@@ -1,4 +1,6 @@
 from collections.abc import Sequence
+import base64
+import json
 from typing import Any
 
 from .config import Settings
@@ -62,6 +64,25 @@ def _create_oidc_proxy_auth_provider(settings: Settings) -> Any:
 
     from fastmcp.server.auth.oidc_proxy import OIDCProxy
 
+    class LabOIDCProxy(OIDCProxy):
+        """OIDC proxy that carries the configured authorization claim forward.
+
+        FastMCP's proxy JWT is intentionally a reference token. The proxy
+        supports embedding selected upstream claims, but its default OIDC
+        implementation embeds none. Service authorization needs the group
+        claim after the proxy token is validated, so preserve that one claim.
+        """
+
+        async def _extract_upstream_claims(
+            self, idp_tokens: dict[str, Any]
+        ) -> dict[str, Any] | None:
+            claim_name = settings.mcp_auth_group_claim
+            for token_name in ("id_token", "access_token"):
+                claims = _decode_jwt_claims(idp_tokens.get(token_name))
+                if claim_name in claims:
+                    return {claim_name: claims[claim_name]}
+            return None
+
     kwargs: dict[str, Any] = {
         "config_url": config_url,
         "client_id": settings.mcp_auth_oidc_client_id,
@@ -76,7 +97,29 @@ def _create_oidc_proxy_auth_provider(settings: Settings) -> Any:
     if settings.mcp_auth_oidc_jwt_signing_key:
         kwargs["jwt_signing_key"] = settings.mcp_auth_oidc_jwt_signing_key.get_secret_value()
 
-    return OIDCProxy(**kwargs)
+    return LabOIDCProxy(**kwargs)
+
+
+def _decode_jwt_claims(token: Any) -> dict[str, Any]:
+    """Decode JWT claims from a token already received from the OIDC provider.
+
+    Signature and issuer validation are performed by FastMCP's upstream token
+    verifier before the claims are used for authorization. This helper only
+    extracts the payload so the proxy can carry the configured claim forward.
+    Opaque tokens are ignored.
+    """
+    if not isinstance(token, str):
+        return {}
+    parts = token.split(".")
+    if len(parts) != 3:
+        return {}
+    try:
+        padding = "=" * (-len(parts[1]) % 4)
+        payload = base64.urlsafe_b64decode(parts[1] + padding)
+        claims = json.loads(payload)
+    except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
+        return {}
+    return claims if isinstance(claims, dict) else {}
 
 
 def _default_oidc_config_url(settings: Settings) -> str | None:

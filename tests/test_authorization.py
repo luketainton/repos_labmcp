@@ -41,3 +41,11 @@ def test_service_group_access_supports_a_custom_role_claim() -> None:
 
     assert check is not None
     assert check(_context({"roles": "administrator"})) is True
+
+
+def test_service_group_access_reads_fastmcp_upstream_claims() -> None:
+    settings = Settings(mcp_service_groups={"gitea": ["godmode"]})
+    check = require_service_access("gitea", settings)
+
+    assert check is not None
+    assert check(_context({"upstream_claims": {"groups": ["godmode"]}})) is True

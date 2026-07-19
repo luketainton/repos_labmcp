@@ -21,6 +21,11 @@ def require_service_access(service: str, settings: Settings) -> AuthCheck | None
         if token is None:
             return False
         user_groups = _claim_values(token.claims, settings.mcp_auth_group_claim)
+        upstream_claims = token.claims.get("upstream_claims")
+        if isinstance(upstream_claims, Mapping):
+            user_groups.update(
+                _claim_values(upstream_claims, settings.mcp_auth_group_claim)
+            )
         return bool(user_groups.intersection(allowed_groups))
 
     return check
