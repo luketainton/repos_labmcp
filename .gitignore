@@ -45,11 +45,13 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
+testresults.xml
 coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.pycache_compile/
 cover/
 
 # Translations
@@ -173,4 +175,3 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-

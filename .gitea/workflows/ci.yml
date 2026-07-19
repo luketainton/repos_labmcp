@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Check formatting and lint
+        run: uv run ruff check .
+
+      - name: Run unit tests with coverage
+        run: |
+          uv run coverage run -m pytest -v --junitxml=testresults.xml
+          uv run coverage report
+          uv run coverage xml -q -o coverage.xml
+
+      - name: Verify Python compilation
+        run: uv run python -m compileall -q src tests
+
+      - name: Build Docker image
+        run: docker build --tag labmcp:ci .

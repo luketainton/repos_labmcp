@@ -1,0 +1,47 @@
+name: Sonar
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Check formatting and lint
+        run: uv run ruff check .
+
+      - name: Run unit tests with coverage
+        run: |
+          uv run coverage run -m pytest -v --junitxml=testresults.xml
+          uv run coverage report
+          uv run coverage xml -q -o coverage.xml
+
+      - name: Normalize coverage paths for SonarQube
+        run: |
+          sed -i 's@${{ gitea.workspace }}@/github/workspace@g' coverage.xml
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v8.2
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

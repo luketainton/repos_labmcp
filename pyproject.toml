@@ -1,0 +1,47 @@
+[project]
+name = "labmcp"
+version = "0.1.0"
+description = "A unified Model Context Protocol server for a home lab"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastmcp>=3.0,<4.0",
+    "httpx>=0.27,<1.0",
+    "pydantic-settings>=2.0,<3.0",
+]
+
+[project.scripts]
+labmcp = "labmcp.server:main"
+
+[dependency-groups]
+dev = [
+    "coverage[toml]>=7.6,<8.0",
+    "pytest>=8.0,<9.0",
+    "pytest-asyncio>=0.23,<2.0",
+    "ruff>=0.6,<1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/labmcp"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+source = ["labmcp"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.coverage.xml]
+output = "coverage.xml"
