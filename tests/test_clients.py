@@ -7,7 +7,7 @@ from labmcp.clients import ServiceClient, gitea_client, pocket_id_client
 
 
 class RecordingAsyncClient:
-    response = httpx.Response(200, json={"ok": True})
+    response_kwargs = {"json": {"ok": True}}
     requests: list[dict] = []
 
     def __init__(self, **kwargs):
@@ -21,7 +21,11 @@ class RecordingAsyncClient:
 
     async def request(self, method, url, **kwargs):
         self.requests.append({"method": method, "url": url, **kwargs})
-        return self.response
+        return httpx.Response(
+            200,
+            request=httpx.Request(method, url),
+            **self.response_kwargs,
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -51,7 +55,7 @@ async def test_service_client_builds_url_and_returns_json(monkeypatch):
 @pytest.mark.asyncio
 async def test_service_client_returns_text_for_non_json_response(monkeypatch):
     class TextClient(RecordingAsyncClient):
-        response = httpx.Response(200, text="healthy")
+        response_kwargs = {"text": "healthy"}
 
     monkeypatch.setattr(httpx, "AsyncClient", TextClient)
 
