@@ -3,6 +3,7 @@ from typing import Any
 from fastmcp import FastMCP
 
 from .auth import create_auth_provider, ensure_network_transport_is_authenticated
+from .authorization import require_service_access
 from .clients import gitea_client, pocket_id_client
 from .config import get_settings
 from .version import get_version
@@ -11,13 +12,17 @@ _settings = get_settings()
 mcp = FastMCP(f"Home Lab ({get_version()})", auth=create_auth_provider(_settings))
 
 
+def _service_auth(service: str):
+    return require_service_access(service, _settings)
+
+
 @mcp.tool()
 def labmcp_get_version() -> str:
     """Return the running labmcp package version."""
     return get_version()
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("gitea"))
 async def gitea_list_repositories(
     page: int = 1,
     limit: int = 50,
@@ -34,13 +39,13 @@ async def gitea_list_repositories(
     return result
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("gitea"))
 async def gitea_get_repository(owner: str, repo: str) -> dict[str, Any]:
     """Get metadata for one Gitea repository."""
     return await gitea_client(get_settings()).request("GET", f"/api/v1/repos/{owner}/{repo}")
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("gitea"))
 async def gitea_list_issues(
     owner: str,
     repo: str,
@@ -60,7 +65,7 @@ async def gitea_list_issues(
     )
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("gitea"))
 async def gitea_create_issue(owner: str, repo: str, title: str, body: str = "") -> dict[str, Any]:
     """Create an issue in a Gitea repository."""
     if not title.strip():
@@ -70,7 +75,7 @@ async def gitea_create_issue(owner: str, repo: str, title: str, body: str = "") 
     )
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("pocket_id"))
 async def pocket_id_openid_configuration() -> dict[str, Any]:
     """Read Pocket ID's OpenID Connect discovery document."""
     return await pocket_id_client(get_settings()).request(
@@ -78,14 +83,14 @@ async def pocket_id_openid_configuration() -> dict[str, Any]:
     )
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("pocket_id"))
 async def pocket_id_health() -> Any:
     """Check Pocket ID health using POCKET_ID_HEALTH_PATH (default: /api/health)."""
     settings = get_settings()
     return await pocket_id_client(settings).request("GET", settings.pocket_id_health_path)
 
 
-@mcp.tool()
+@mcp.tool(auth=_service_auth("pocket_id"))
 async def pocket_id_get_json(path: str) -> Any:
     """GET a JSON endpoint on Pocket ID, useful for deployments with an enabled API."""
     if not path.startswith("/") or path.startswith("//"):

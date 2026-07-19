@@ -47,7 +47,7 @@ MCP_AUTH_BASE_URL=https://labmcp.example.com
 MCP_AUTH_OIDC_CLIENT_ID=<pocket-id-client-id>
 MCP_AUTH_OIDC_CLIENT_SECRET=<pocket-id-client-secret>
 MCP_AUTH_OIDC_JWT_SIGNING_KEY=<stable-random-secret>
-MCP_AUTH_REQUIRED_SCOPES=openid,profile
+MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
 ```
 
 By default, `MCP_AUTH_OIDC_CONFIG_URL` is derived as `<POCKET_ID_URL>/.well-known/openid-configuration`, and the callback path is `/auth/callback`. Set them explicitly if your Pocket ID issuer or reverse proxy path differs from `POCKET_ID_URL`.
@@ -66,6 +66,20 @@ MCP_AUTH_JWT_AUDIENCE=<pocket-id-client-id>
 ```
 
 In `jwt` mode, `MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to `<issuer>/.well-known/jwks.json`. If you configure `MCP_AUTH_REQUIRED_SCOPES`, provide a comma-separated list of scopes that must be present in the token.
+
+### Service access by Pocket ID group or role
+
+Tools can be made visible only to users in specific Pocket ID groups. Request Pocket ID's `groups` scope and map each service to one or more permitted groups:
+
+```sh
+MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
+MCP_AUTH_GROUP_CLAIM=groups
+MCP_SERVICE_GROUPS={"gitea":["mcp-gitea"],"pocket_id":["mcp-pocket-id"]}
+```
+
+Membership of any group listed for a service permits access to that service's tools. The Gitea tools use the `gitea` service key; all Pocket ID tools use `pocket_id`. Once `MCP_SERVICE_GROUPS` is non-empty, any omitted service is denied. Leave it as `{}` only when every authenticated user should have access to all services.
+
+Pocket ID normally provides groups in the `groups` claim. To authorize from a custom role claim instead, configure that custom claim on the relevant Pocket ID groups, set `MCP_AUTH_GROUP_CLAIM` to its name, and use its values in `MCP_SERVICE_GROUPS`.
 
 ## CI and code quality
 
