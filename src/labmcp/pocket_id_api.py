@@ -1,6 +1,6 @@
 """Validated access to Pocket ID's documented JSON API operations."""
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 from urllib.parse import quote
@@ -8,7 +8,7 @@ from urllib.parse import quote
 from fastmcp.server.providers import Provider
 from fastmcp.tools import Tool
 
-from .clients import ServiceClient
+from .clients import ServiceClient, ServiceClientFactory
 
 
 @dataclass(frozen=True)
@@ -16,9 +16,6 @@ class PocketIDOperation:
     method: Literal["GET", "POST", "PUT", "DELETE"]
     path: str
     encoding: Literal["json", "form"] = "json"
-
-
-ServiceClientFactory = Callable[[], ServiceClient]
 
 
 # Generated from https://pocket-id.org/swagger.yaml. Binary image upload/download

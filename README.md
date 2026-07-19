@@ -1,6 +1,6 @@
 # labmcp
 
-Unified [Model Context Protocol](https://modelcontextprotocol.io/) server for a home lab. It currently exposes Gitea and Pocket ID through one FastMCP process.
+Unified [Model Context Protocol](https://modelcontextprotocol.io/) server for a home lab. It currently exposes Gitea, Pocket ID, and n8n through one FastMCP process.
 
 ## Exposed tools
 
@@ -19,9 +19,15 @@ Pocket ID:
 - one individually discoverable `pocket_id_*` tool for every supported Pocket ID operation
 - `labmcp_get_version`
 
+n8n:
+
+- one individually discoverable `n8n_*` tool for every supported operation in n8n's OpenAPI document
+
 Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. Each supported JSON/form endpoint is exposed as its own tool, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.
 
 Gitea's tools are generated from `<GITEA_URL>/swagger.v1.json` and cached when the server first serves tool discovery. This exposes the documented non-binary operations for the running Gitea version as individual `gitea_*` tools. Restart labmcp after a Gitea upgrade to rebuild the catalogue. The Gitea token is supplied using Gitea's `Authorization: token ...` scheme.
+
+n8n's tools are generated from `<N8N_URL><N8N_API_PATH>/openapi.yml` (default path: `/api/v1`) and cached when the server first serves tool discovery. The n8n API key is supplied using the `X-N8N-API-KEY` header. Operations accept `path_params`, `query`, and either `body` or `form` arguments.
 
 ## Local development
 
@@ -99,6 +105,7 @@ docker build -t labmcp:local .
 docker run --rm -i \
   -e GITEA_URL -e GITEA_TOKEN \
   -e POCKET_ID_URL -e POCKET_ID_TOKEN \
+  -e N8N_URL -e N8N_API_KEY \
   labmcp:local
 ```
 

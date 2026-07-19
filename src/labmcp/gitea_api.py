@@ -1,6 +1,6 @@
 """Validated access to the configured Gitea instance's published Swagger API."""
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import re
 from typing import Any
@@ -9,7 +9,7 @@ from urllib.parse import quote
 from fastmcp.server.providers import Provider
 from fastmcp.tools import Tool
 
-from .clients import ServiceClient
+from .clients import ServiceClient, ServiceClientFactory
 
 _ALLOWED_METHODS = {"get", "post", "put", "patch", "delete"}
 _OPERATIONS_CACHE: dict[str, dict[str, "GiteaOperation"]] = {}
@@ -20,9 +20,6 @@ class GiteaOperation:
     method: str
     path: str
     encoding: str
-
-
-ServiceClientFactory = Callable[[], ServiceClient]
 
 
 def parse_operations(specification: Mapping[str, Any]) -> dict[str, GiteaOperation]:

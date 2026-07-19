@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     pocket_id_url: str | None = None
     pocket_id_token: SecretStr | None = None
     pocket_id_health_path: str = "/api/health"
+    n8n_url: str | None = None
+    n8n_api_key: SecretStr | None = None
+    n8n_api_path: str = "/api/v1"
     http_timeout: float = 20.0
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"

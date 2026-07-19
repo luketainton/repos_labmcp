@@ -4,9 +4,10 @@ from fastmcp import FastMCP
 
 from .auth import create_auth_provider, ensure_network_transport_is_authenticated
 from .authorization import require_service_access
-from .clients import gitea_client, pocket_id_client
+from .clients import gitea_client, n8n_client, pocket_id_client
 from .config import get_settings
 from .gitea_api import GiteaOperationProvider
+from .n8n_api import N8NOperationProvider
 from .pocket_id_api import PocketIDOperationProvider
 from .version import get_version
 
@@ -24,6 +25,11 @@ mcp = FastMCP(
         GiteaOperationProvider(lambda: gitea_client(get_settings()), _service_auth("gitea")),
         PocketIDOperationProvider(
             lambda: pocket_id_client(get_settings()), _service_auth("pocket_id")
+        ),
+        N8NOperationProvider(
+            lambda: n8n_client(get_settings()),
+            api_path=_settings.n8n_api_path,
+            auth=_service_auth("n8n"),
         ),
     ],
 )

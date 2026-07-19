@@ -1,9 +1,11 @@
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import httpx
 
 from .config import Settings
+
+ServiceClientFactory = Callable[[], "ServiceClient"]
 
 
 class ServiceClient:
@@ -78,5 +80,17 @@ def pocket_id_client(settings: Settings) -> ServiceClient:
         token,
         settings.http_timeout,
         auth_header="X-API-KEY",
+        auth_prefix="",
+    )
+
+
+def n8n_client(settings: Settings) -> ServiceClient:
+    """Create a client for n8n's API-key authenticated REST API."""
+    token = settings.n8n_api_key.get_secret_value() if settings.n8n_api_key else None
+    return ServiceClient(
+        settings.n8n_url,
+        token,
+        settings.http_timeout,
+        auth_header="X-N8N-API-KEY",
         auth_prefix="",
     )
