@@ -1,6 +1,6 @@
 # labmcp
 
-Unified [Model Context Protocol](https://modelcontextprotocol.io/) server for a home lab. It currently exposes Gitea, Pocket ID, and n8n through one FastMCP process.
+Unified [Model Context Protocol](https://modelcontextprotocol.io/) server for a home lab. It currently exposes Gitea, Pocket ID, n8n, and Action1 through one FastMCP process.
 
 ## Exposed tools
 
@@ -22,6 +22,12 @@ Pocket ID:
 n8n:
 
 - one individually discoverable `n8n_*` tool for every supported operation in n8n's OpenAPI document
+
+Action1:
+
+- individually discoverable `action1_*` tools for endpoint inventory and groups, patching, reports, vulnerabilities, automations, and scripts.
+
+Action1 tools authenticate with API credentials. Configure both `ACTION1_CLIENT_ID` and `ACTION1_CLIENT_SECRET`; LabMCP posts them as form data to `/oauth2/token`, caches the returned bearer token until shortly before expiry, and uses it for API calls. Set `ACTION1_URL` to the matching regional endpoint; it defaults to `https://app.action1.com/api/3.0`.
 
 Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. Each supported JSON/form endpoint is exposed as its own tool, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.
 
@@ -109,6 +115,7 @@ docker run --rm -i \
   -e GITEA_URL -e GITEA_TOKEN \
   -e POCKET_ID_URL -e POCKET_ID_TOKEN \
   -e N8N_URL -e N8N_API_KEY \
+  -e ACTION1_URL -e ACTION1_CLIENT_ID -e ACTION1_CLIENT_SECRET \
   labmcp:local
 ```
 

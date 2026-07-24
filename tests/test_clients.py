@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastmcp.exceptions import ToolError
 
-from labmcp.clients import ServiceClient, gitea_client, pocket_id_client
+from labmcp.clients import Action1Client, ServiceClient, action1_client, gitea_client, pocket_id_client
 
 
 class RecordingAsyncClient:
@@ -109,6 +109,42 @@ def test_service_clients_use_service_specific_auth_headers():
         "",
         "pocket-secret",
     )
+
+
+@pytest.mark.asyncio
+async def test_action1_client_exchanges_and_caches_client_credentials(monkeypatch):
+    class Action1RecordingClient(RecordingAsyncClient):
+        async def post(self, url, **kwargs):
+            self.requests.append({"method": "POST", "url": url, **kwargs})
+            return httpx.Response(
+                200,
+                request=httpx.Request("POST", url),
+                json={"access_token": "action1-token", "expires_in": 3600},
+            )
+
+    monkeypatch.setattr(httpx, "AsyncClient", Action1RecordingClient)
+    settings = SimpleNamespace(
+        action1_url="https://app.eu.action1.com/api/3.0",
+        action1_client_id="client-id",
+        action1_client_secret=SimpleNamespace(get_secret_value=lambda: "client-secret"),
+        http_timeout=10.0,
+    )
+    client = action1_client(settings)
+
+    await client.request("GET", "/me")
+    await client.request("GET", "/me")
+
+    assert isinstance(client, Action1Client)
+    assert Action1RecordingClient.requests[0] == {
+        "method": "POST",
+        "url": "https://app.eu.action1.com/api/3.0/oauth2/token",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+        "data": {"client_id": "client-id", "client_secret": "client-secret"},
+    }
+    assert [request["headers"]["Authorization"] for request in Action1RecordingClient.requests[1:]] == [
+        "Bearer action1-token",
+        "Bearer action1-token",
+    ]
 
 
 def test_service_client_requires_a_base_url():

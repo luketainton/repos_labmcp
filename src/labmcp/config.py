@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     n8n_url: str | None = None
     n8n_api_key: SecretStr | None = None
     n8n_api_path: str = "/api/v1"
+    action1_url: str | None = "https://app.action1.com/api/3.0"
+    action1_client_id: str | None = None
+    action1_client_secret: SecretStr | None = None
     http_timeout: float = 20.0
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"
