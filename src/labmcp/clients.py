@@ -2,6 +2,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 import httpx
+from fastmcp.exceptions import ToolError
 
 from .config import Settings
 
@@ -57,7 +58,10 @@ class ServiceClient:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             detail = response.text[:500]
-            raise RuntimeError(
+            # FastMCP deliberately masks ordinary exceptions when configured to
+            # do so.  Raise its explicit tool error type so an upstream API
+            # diagnostic remains available to the caller.
+            raise ToolError(
                 f"{method} {path} failed with {response.status_code}: {detail}"
             ) from exc
         if not response.content:

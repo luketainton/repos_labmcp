@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
+from fastmcp.exceptions import ToolError
 
 from labmcp.clients import ServiceClient, gitea_client, pocket_id_client
 
@@ -62,6 +63,28 @@ async def test_service_client_returns_text_for_non_json_response(monkeypatch):
     result = await ServiceClient("https://service.example", None, 5.0).request("GET", "/health")
 
     assert result == {"status_code": 200, "text": "healthy"}
+
+
+@pytest.mark.asyncio
+async def test_service_client_surfaces_upstream_error_details_to_tools(monkeypatch):
+    class ConflictClient(RecordingAsyncClient):
+        async def request(self, method, url, **kwargs):
+            self.requests.append({"method": method, "url": url, **kwargs})
+            return httpx.Response(
+                409,
+                request=httpx.Request(method, url),
+                json={"message": "pull request is not mergeable"},
+            )
+
+    monkeypatch.setattr(httpx, "AsyncClient", ConflictClient)
+
+    with pytest.raises(
+        ToolError,
+        match=r"POST /api/v1/repos/alice/notes/pulls/7/merge failed with 409: .*not mergeable",
+    ):
+        await ServiceClient("https://service.example", None, 5.0).request(
+            "POST", "/api/v1/repos/alice/notes/pulls/7/merge", json={"Do": "merge"}
+        )
 
 
 def test_service_clients_use_service_specific_auth_headers():
