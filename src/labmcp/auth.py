@@ -109,6 +109,7 @@ def _create_oidc_proxy_auth_provider(settings: Settings) -> Any:
         "redirect_path": settings.mcp_auth_oidc_redirect_path,
         "required_scopes": _required_scopes(settings),
         "forward_resource": settings.mcp_auth_oidc_forward_resource,
+        "enable_cimd": settings.mcp_auth_oidc_enable_cimd,
     }
     if settings.mcp_auth_jwt_audience:
         kwargs["audience"] = settings.mcp_auth_jwt_audience
