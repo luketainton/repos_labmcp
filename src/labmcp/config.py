@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     mcp_auth_oidc_extra_scopes: str = "offline_access"
     mcp_auth_oidc_jwt_signing_key: SecretStr | None = None
     mcp_auth_oidc_forward_resource: bool = False
+    mcp_auth_oidc_enable_cimd: bool = True
 
 
 @lru_cache
