@@ -33,17 +33,37 @@ def _create_jwt_auth_provider(settings: Settings) -> Any:
     if not issuer:
         raise RuntimeError("Set MCP_AUTH_JWT_ISSUER or POCKET_ID_URL when MCP_AUTH_MODE=jwt.")
     if not settings.mcp_auth_jwt_audience:
-        raise RuntimeError("Set MCP_AUTH_JWT_AUDIENCE to the Pocket ID OIDC client ID.")
+        raise RuntimeError(
+            "Set MCP_AUTH_JWT_AUDIENCE to the public MCP resource URL registered in Pocket ID."
+        )
+    base_url = _strip_trailing_slash(settings.mcp_auth_base_url)
+    if not base_url:
+        raise RuntimeError("Set MCP_AUTH_BASE_URL to the public HTTPS URL of this MCP server.")
 
     jwks_uri = settings.mcp_auth_jwt_jwks_uri or f"{issuer}/.well-known/jwks.json"
 
+    from fastmcp.server.auth import RemoteAuthProvider
     from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-    return JWTVerifier(
+    class LabJWTVerifier(JWTVerifier):
+        """Require the user subject that Pocket ID puts in access tokens."""
+
+        async def verify_token(self, token: str) -> Any | None:
+            access_token = await super().verify_token(token)
+            if access_token is None or not access_token.claims.get("sub"):
+                return None
+            return access_token
+
+    token_verifier = LabJWTVerifier(
         jwks_uri=jwks_uri,
         issuer=issuer,
         audience=settings.mcp_auth_jwt_audience,
         required_scopes=_required_scopes(settings),
+    )
+    return RemoteAuthProvider(
+        token_verifier=token_verifier,
+        authorization_servers=[issuer],
+        base_url=base_url,
     )
 
 

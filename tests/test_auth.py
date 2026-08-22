@@ -39,24 +39,36 @@ def test_jwt_auth_derives_pocket_id_jwks(monkeypatch: pytest.MonkeyPatch) -> Non
         def __init__(self, **kwargs: object) -> None:
             self.kwargs = kwargs
 
+    class FakeRemoteAuthProvider:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+
     jwt_module = types.ModuleType("fastmcp.server.auth.providers.jwt")
     jwt_module.JWTVerifier = FakeJWTVerifier
     monkeypatch.setitem(sys.modules, "fastmcp.server.auth.providers.jwt", jwt_module)
+    auth_module = types.ModuleType("fastmcp.server.auth")
+    auth_module.RemoteAuthProvider = FakeRemoteAuthProvider
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth", auth_module)
 
     settings = Settings(
         pocket_id_url="https://id.example.com/",
         mcp_auth_mode="jwt",
-        mcp_auth_jwt_audience="labmcp",
+        mcp_auth_base_url="https://labmcp.example.com/",
+        mcp_auth_jwt_audience="https://labmcp.example.com/mcp",
         mcp_auth_required_scopes="openid, profile",
     )
 
     provider = create_auth_provider(settings)
 
-    assert isinstance(provider, FakeJWTVerifier)
-    assert provider.kwargs == {
+    assert isinstance(provider, FakeRemoteAuthProvider)
+    assert provider.kwargs["authorization_servers"] == ["https://id.example.com"]
+    assert provider.kwargs["base_url"] == "https://labmcp.example.com"
+    token_verifier = provider.kwargs["token_verifier"]
+    assert isinstance(token_verifier, FakeJWTVerifier)
+    assert token_verifier.kwargs == {
         "jwks_uri": "https://id.example.com/.well-known/jwks.json",
         "issuer": "https://id.example.com",
-        "audience": "labmcp",
+        "audience": "https://labmcp.example.com/mcp",
         "required_scopes": ["openid", "profile"],
     }
 
@@ -110,6 +122,7 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         "redirect_path": "/auth/callback",
         "required_scopes": ["openid", "profile"],
         "forward_resource": True,
+        "enable_cimd": True,
         "audience": "labmcp",
         "jwt_signing_key": "signing-key",
     }

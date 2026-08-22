@@ -53,7 +53,27 @@ Gitea tokens and Pocket ID API keys should be supplied through secrets or enviro
 
 The server allows unauthenticated stdio because the MCP client starts a local process. Network transports are different: `MCP_TRANSPORT=http`, `sse`, or `streamable-http` require `MCP_AUTH_MODE=jwt` or `oidc_proxy`.
 
-Use `oidc_proxy` when clients should start an interactive login flow and send you to Pocket ID on first connect. Create an OIDC client in Pocket ID for this MCP server, add the callback URL `https://labmcp.example.com/auth/callback`, then configure:
+### Pocket ID metadata-document clients (recommended)
+
+To use Pocket ID's **Metadata document clients** (CIMD), run LabMCP as a JWT-verifying OAuth protected resource. This is the same model as Pocket ID's [MCP OAuth demo](https://github.com/pocket-id/mcp-oauth-demo): MCP clients authenticate directly with Pocket ID using their metadata documents, and LabMCP validates the resulting access tokens. No OIDC client, client secret, or LabMCP callback is required.
+
+Configure LabMCP with its public URL and the exact MCP endpoint URL. For the `http` transport, FastMCP serves the MCP endpoint at `/mcp`:
+
+```sh
+MCP_TRANSPORT=http
+MCP_AUTH_MODE=jwt
+MCP_AUTH_BASE_URL=https://labmcp.example.com
+MCP_AUTH_JWT_AUDIENCE=https://labmcp.example.com/mcp
+MCP_AUTH_REQUIRED_SCOPES=groups
+```
+
+`MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to the issuer's `/.well-known/jwks.json` endpoint. LabMCP publishes OAuth protected-resource metadata that directs clients to Pocket ID; it verifies the token signature, issuer, audience, expiry, scopes, and subject before allowing a request.
+
+In Pocket ID, create an API whose **API resource** is exactly `https://labmcp.example.com/mcp`, configure the permissions/scopes LabMCP requires, then enable **Metadata document clients** for that API. Allow only the client metadata URLs you trust through Pocket ID’s `CIMD_URL_ALLOWLIST` (the Pocket ID demo pre-allows the Claude Code and Claude Desktop metadata URLs). Do not create a separate OIDC client for this flow.
+
+### OIDC proxy clients
+
+Use `oidc_proxy` only when LabMCP itself should act as an OAuth client to Pocket ID. Create an OIDC client in Pocket ID for LabMCP, add the callback URL `https://labmcp.example.com/auth/callback`, then configure:
 
 ```sh
 MCP_TRANSPORT=sse
@@ -70,6 +90,8 @@ By default, `MCP_AUTH_OIDC_CONFIG_URL` is derived as `<POCKET_ID_URL>/.well-know
 
 Pocket ID rejects the OAuth `resource` indicator used by some MCP clients. The server therefore defaults `MCP_AUTH_OIDC_FORWARD_RESOURCE=false`; leave it unchanged for Pocket ID.
 
+`MCP_AUTH_OIDC_ENABLE_CIMD=true` (the default) enables metadata-document clients connecting to LabMCP's proxy. It does not remove the proxy's own upstream OIDC client registration; use the JWT mode above when Pocket ID should authenticate metadata-document clients directly.
+
 When using `oidc_proxy`, `MCP_AUTH_OIDC_EXTRA_SCOPES` defaults to `offline_access`. FastMCP stores and rotates the upstream refresh token, then issues an MCP refresh token to clients. The configured Pocket ID OAuth client must permit the `offline_access` scope. Set the variable to an empty value to disable the extra scope, or provide a comma-separated list of provider-specific extra scopes.
 
 After login, MCP clients authenticate with bearer tokens:
@@ -78,14 +100,15 @@ After login, MCP clients authenticate with bearer tokens:
 Authorization: Bearer <mcp-issued-token>
 ```
 
-Use `jwt` mode only when clients already have a Pocket ID JWT and should skip the interactive login handoff:
+Use `jwt` mode when Pocket ID is the authorization server for the MCP resource, including metadata-document clients:
 
 ```sh
 MCP_AUTH_MODE=jwt
-MCP_AUTH_JWT_AUDIENCE=<pocket-id-client-id>
+MCP_AUTH_BASE_URL=https://labmcp.example.com
+MCP_AUTH_JWT_AUDIENCE=https://labmcp.example.com/mcp
 ```
 
-In `jwt` mode, `MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to `<issuer>/.well-known/jwks.json`. If you configure `MCP_AUTH_REQUIRED_SCOPES`, provide a comma-separated list of scopes that must be present in the token.
+In `jwt` mode, `MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to `<issuer>/.well-known/jwks.json`. `MCP_AUTH_JWT_AUDIENCE` must be the API resource URL, not an OIDC client ID. If you configure `MCP_AUTH_REQUIRED_SCOPES`, provide a comma-separated list of scopes that must be present in the token.
 
 ### Service access by Pocket ID group or role
 
