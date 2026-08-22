@@ -63,6 +63,7 @@ def test_jwt_auth_derives_pocket_id_jwks(monkeypatch: pytest.MonkeyPatch) -> Non
     assert isinstance(provider, FakeRemoteAuthProvider)
     assert provider.kwargs["authorization_servers"] == ["https://id.example.com"]
     assert provider.kwargs["base_url"] == "https://labmcp.example.com"
+    assert provider.kwargs["scopes_supported"] == ["openid", "profile"]
     token_verifier = provider.kwargs["token_verifier"]
     assert isinstance(token_verifier, FakeJWTVerifier)
     assert token_verifier.kwargs == {
@@ -71,6 +72,43 @@ def test_jwt_auth_derives_pocket_id_jwks(monkeypatch: pytest.MonkeyPatch) -> Non
         "audience": "https://labmcp.example.com/mcp",
         "required_scopes": ["openid", "profile"],
     }
+
+
+def test_jwt_auth_advertises_service_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeJWTVerifier:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+
+    class FakeRemoteAuthProvider:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+
+    jwt_module = types.ModuleType("fastmcp.server.auth.providers.jwt")
+    jwt_module.JWTVerifier = FakeJWTVerifier
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth.providers.jwt", jwt_module)
+    auth_module = types.ModuleType("fastmcp.server.auth")
+    auth_module.RemoteAuthProvider = FakeRemoteAuthProvider
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth", auth_module)
+
+    provider = create_auth_provider(
+        Settings(
+            pocket_id_url="https://id.example.com",
+            mcp_auth_mode="jwt",
+            mcp_auth_base_url="https://labmcp.example.com",
+            mcp_auth_jwt_audience="https://labmcp.example.com/mcp",
+            mcp_auth_required_scopes="labmcp:connect",
+            mcp_service_scopes={
+                "gitea": ["labmcp:gitea"],
+                "pocket_id": ["labmcp:pocket-id", "labmcp:connect"],
+            },
+        )
+    )
+
+    assert provider.kwargs["scopes_supported"] == [
+        "labmcp:connect",
+        "labmcp:gitea",
+        "labmcp:pocket-id",
+    ]
 
 
 def test_oidc_proxy_requires_public_base_url() -> None:

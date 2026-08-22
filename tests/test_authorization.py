@@ -4,8 +4,8 @@ from labmcp.authorization import require_service_access
 from labmcp.config import Settings
 
 
-def _context(claims: dict[str, object]) -> SimpleNamespace:
-    return SimpleNamespace(token=SimpleNamespace(claims=claims))
+def _context(claims: dict[str, object], scopes: list[str] | None = None) -> SimpleNamespace:
+    return SimpleNamespace(token=SimpleNamespace(claims=claims, scopes=scopes or []))
 
 
 def test_empty_mapping_does_not_add_a_group_restriction() -> None:
@@ -49,3 +49,35 @@ def test_service_group_access_reads_fastmcp_upstream_claims() -> None:
 
     assert check is not None
     assert check(_context({"upstream_claims": {"groups": ["godmode"]}})) is True
+
+
+def test_unmapped_service_is_denied_when_scope_mapping_is_enabled() -> None:
+    settings = Settings(mcp_service_scopes={"gitea": ["labmcp:gitea"]})
+    check = require_service_access("pocket_id", settings)
+
+    assert check is not None
+    assert check(_context({}, ["labmcp:pocket-id"])) is False
+
+
+def test_service_scope_access_requires_an_allowed_scope() -> None:
+    settings = Settings(
+        mcp_service_scopes={"gitea": ["labmcp:gitea", "labmcp:admin"]}
+    )
+    check = require_service_access("gitea", settings)
+
+    assert check is not None
+    assert check(_context({}, ["labmcp:gitea"])) is True
+    assert check(_context({}, ["labmcp:pocket-id"])) is False
+    assert check(SimpleNamespace(token=None)) is False
+
+
+def test_service_scope_and_group_access_are_alternatives() -> None:
+    settings = Settings(
+        mcp_service_groups={"gitea": ["mcp-gitea"]},
+        mcp_service_scopes={"gitea": ["labmcp:gitea"]},
+    )
+    check = require_service_access("gitea", settings)
+
+    assert check is not None
+    assert check(_context({"groups": ["mcp-gitea"]})) is True
+    assert check(_context({}, ["labmcp:gitea"])) is True

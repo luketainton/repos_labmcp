@@ -110,7 +110,7 @@ MCP_AUTH_JWT_AUDIENCE=https://labmcp.example.com/mcp
 
 In `jwt` mode, `MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to `<issuer>/.well-known/jwks.json`. `MCP_AUTH_JWT_AUDIENCE` must be the API resource URL, not an OIDC client ID. If you configure `MCP_AUTH_REQUIRED_SCOPES`, provide a comma-separated list of scopes that must be present in the token.
 
-### Service access by Pocket ID group or role
+### Service access by Pocket ID group, role, or scope
 
 Tools can be made visible only to users in specific Pocket ID groups. Request Pocket ID's `groups` scope and map each service to one or more permitted groups:
 
@@ -123,6 +123,15 @@ MCP_SERVICE_GROUPS={"gitea":["mcp-gitea"],"pocket_id":["mcp-pocket-id"]}
 Membership of any group listed for a service permits access to that service's tools. The Gitea tools use the `gitea` service key; all Pocket ID tools use `pocket_id`. Once `MCP_SERVICE_GROUPS` is non-empty, any omitted service is denied. Leave it as `{}` only when every authenticated user should have access to all services.
 
 Pocket ID normally provides groups in the `groups` claim. To authorize from a custom role claim instead, configure that custom claim on the relevant Pocket ID groups, set `MCP_AUTH_GROUP_CLAIM` to its name, and use its values in `MCP_SERVICE_GROUPS`.
+
+Alternatively, authorize each service from API permissions (OAuth scopes), without requesting a groups claim:
+
+```sh
+MCP_AUTH_REQUIRED_SCOPES=labmcp:connect
+MCP_SERVICE_SCOPES={"gitea":["labmcp:gitea"],"pocket_id":["labmcp:pocket-id"],"n8n":["labmcp:n8n"],"action1":["labmcp:action1"]}
+```
+
+Create the matching permissions on the LabMCP API in Pocket ID and grant them to metadata-document clients. A token needs `labmcp:connect` to authenticate and at least one listed scope to use a mapped service. `MCP_SERVICE_GROUPS` and `MCP_SERVICE_SCOPES` are alternatives: a matching group **or** scope permits access. When either mapping is non-empty, a service omitted from both mappings is denied.
 
 ## CI and code quality
 

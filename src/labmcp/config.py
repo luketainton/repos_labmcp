@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     mcp_auth_jwt_required_scopes: str | None = None
     mcp_auth_group_claim: str = "groups"
     mcp_service_groups: dict[str, list[str]] = Field(default_factory=dict)
+    mcp_service_scopes: dict[str, list[str]] = Field(default_factory=dict)
     mcp_auth_oidc_config_url: str | None = None
     mcp_auth_oidc_client_id: str | None = None
     mcp_auth_oidc_client_secret: SecretStr | None = None

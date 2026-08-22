@@ -7,14 +7,16 @@ AuthCheck = Callable[[Any], bool]
 
 
 def require_service_access(service: str, settings: Settings) -> AuthCheck | None:
-    """Create a per-service authorization check from the configured claim mapping.
+    """Create a per-service authorization check from group or scope mappings.
 
-    Without a mapping, every authenticated user may use every service. Once a mapping
-    is configured, each service requires membership of at least one listed group.
+    Without a mapping, every authenticated user may use every service. Once either
+    mapping is configured, each service requires an allowed group or scope. A service
+    absent from both mappings is denied.
     """
-    if not settings.mcp_service_groups:
+    if not settings.mcp_service_groups and not settings.mcp_service_scopes:
         return None
     allowed_groups = settings.mcp_service_groups.get(service, [])
+    allowed_scopes = settings.mcp_service_scopes.get(service, [])
 
     def check(context: Any) -> bool:
         token = context.token
@@ -26,7 +28,11 @@ def require_service_access(service: str, settings: Settings) -> AuthCheck | None
             user_groups.update(
                 _claim_values(upstream_claims, settings.mcp_auth_group_claim)
             )
-        return bool(user_groups.intersection(allowed_groups))
+        token_scopes = set(getattr(token, "scopes", []))
+        return bool(
+            user_groups.intersection(allowed_groups)
+            or token_scopes.intersection(allowed_scopes)
+        )
 
     return check
 

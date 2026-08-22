@@ -64,6 +64,7 @@ def _create_jwt_auth_provider(settings: Settings) -> Any:
         token_verifier=token_verifier,
         authorization_servers=[issuer],
         base_url=base_url,
+        scopes_supported=_supported_scopes(settings),
     )
 
 
@@ -184,3 +185,13 @@ def _parse_scopes(value: str | None) -> Sequence[str] | None:
 
 def _required_scopes(settings: Settings) -> Sequence[str] | None:
     return _parse_scopes(settings.mcp_auth_required_scopes or settings.mcp_auth_jwt_required_scopes)
+
+
+def _supported_scopes(settings: Settings) -> list[str]:
+    """Advertise required and per-service scopes to OAuth clients."""
+    scopes = list(_required_scopes(settings) or [])
+    for service_scopes in settings.mcp_service_scopes.values():
+        for scope in service_scopes:
+            if scope not in scopes:
+                scopes.append(scope)
+    return scopes
