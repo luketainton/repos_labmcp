@@ -101,6 +101,18 @@ def n8n_client(settings: Settings) -> ServiceClient:
     )
 
 
+def shlink_client(settings: Settings) -> ServiceClient:
+    """Create a client for Shlink's API-key authenticated REST API."""
+    token = settings.shlink_api_key.get_secret_value() if settings.shlink_api_key else None
+    return ServiceClient(
+        settings.shlink_url,
+        token,
+        settings.http_timeout,
+        auth_header="X-Api-Key",
+        auth_prefix="",
+    )
+
+
 class Action1Client(ServiceClient):
     """Action1 client that obtains and caches OAuth access tokens."""
 

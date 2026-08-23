@@ -4,7 +4,9 @@ import httpx
 import pytest
 from fastmcp.exceptions import ToolError
 
-from labmcp.clients import Action1Client, ServiceClient, action1_client, gitea_client, pocket_id_client
+from labmcp.clients import (
+    Action1Client, ServiceClient, action1_client, gitea_client, pocket_id_client, shlink_client,
+)
 
 
 class RecordingAsyncClient:
@@ -93,11 +95,14 @@ def test_service_clients_use_service_specific_auth_headers():
         gitea_token=SimpleNamespace(get_secret_value=lambda: "gitea-secret"),
         pocket_id_url="https://pocket.example",
         pocket_id_token=SimpleNamespace(get_secret_value=lambda: "pocket-secret"),
+        shlink_url="https://links.example",
+        shlink_api_key=SimpleNamespace(get_secret_value=lambda: "shlink-secret"),
         http_timeout=10.0,
     )
 
     gitea = gitea_client(settings)
     pocket_id = pocket_id_client(settings)
+    shlink = shlink_client(settings)
 
     assert (gitea.auth_header, gitea.auth_prefix, gitea.token) == (
         "Authorization",
@@ -108,6 +113,11 @@ def test_service_clients_use_service_specific_auth_headers():
         "X-API-KEY",
         "",
         "pocket-secret",
+    )
+    assert (shlink.auth_header, shlink.auth_prefix, shlink.token) == (
+        "X-Api-Key",
+        "",
+        "shlink-secret",
     )
 
 

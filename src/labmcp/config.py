@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     n8n_url: str | None = None
     n8n_api_key: SecretStr | None = None
     n8n_api_path: str = "/api/v1"
+    shlink_url: str | None = None
+    shlink_api_key: SecretStr | None = None
+    shlink_api_version: str = "3"
     action1_url: str | None = "https://app.action1.com/api/3.0"
     action1_client_id: str | None = None
     action1_client_secret: SecretStr | None = None

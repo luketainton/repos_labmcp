@@ -4,12 +4,13 @@ from fastmcp import FastMCP
 
 from .auth import create_auth_provider, ensure_network_transport_is_authenticated
 from .authorization import require_service_access
-from .clients import action1_client, gitea_client, n8n_client, pocket_id_client
+from .clients import action1_client, gitea_client, n8n_client, pocket_id_client, shlink_client
 from .action1_api import Action1OperationProvider
 from .config import get_settings
 from .gitea_api import GiteaOperationProvider
 from .n8n_api import N8NOperationProvider
 from .pocket_id_api import PocketIDOperationProvider
+from .shlink_api import ShlinkOperationProvider
 from .tool_logging import ToolCallLoggingMiddleware
 from .version import get_version
 
@@ -33,6 +34,11 @@ mcp = FastMCP(
             lambda: n8n_client(get_settings()),
             api_path=_settings.n8n_api_path,
             auth=_service_auth("n8n"),
+        ),
+        ShlinkOperationProvider(
+            lambda: shlink_client(get_settings()),
+            api_version=_settings.shlink_api_version,
+            auth=_service_auth("shlink"),
         ),
         Action1OperationProvider(
             lambda: _action1_client, _service_auth("action1")
