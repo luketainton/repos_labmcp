@@ -1,14 +1,14 @@
 """Audit logging for MCP tool invocations."""
 
 import json
-import logging
 from typing import Any
 
 from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
+from fastmcp.utilities.logging import get_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ToolCallLoggingMiddleware(Middleware):

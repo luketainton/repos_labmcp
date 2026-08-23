@@ -4,7 +4,11 @@ from types import SimpleNamespace
 import pytest
 from fastmcp.server.middleware import MiddlewareContext
 
-from labmcp.tool_logging import ToolCallLoggingMiddleware
+from labmcp.tool_logging import ToolCallLoggingMiddleware, logger
+
+
+def test_tool_call_logger_uses_fastmcp_logging_hierarchy():
+    assert logger.name == "fastmcp.labmcp.tool_logging"
 
 
 @pytest.mark.asyncio
@@ -21,7 +25,7 @@ async def test_tool_call_log_contains_user_tool_parameters_and_output(monkeypatc
     async def call_next(_context):
         return {"repositories": ["notes"]}
 
-    with caplog.at_level(logging.INFO, logger="labmcp.tool_logging"):
+    with caplog.at_level(logging.INFO, logger=logger.name):
         result = await ToolCallLoggingMiddleware().on_call_tool(context, call_next)
 
     assert result == {"repositories": ["notes"]}
@@ -43,7 +47,7 @@ async def test_tool_call_error_is_logged_as_output(monkeypatch, caplog):
     async def call_next(_context):
         raise ValueError("unavailable")
 
-    with caplog.at_level(logging.INFO, logger="labmcp.tool_logging"):
+    with caplog.at_level(logging.INFO, logger=logger.name):
         with pytest.raises(ValueError, match="unavailable"):
             await ToolCallLoggingMiddleware().on_call_tool(context, call_next)
 
