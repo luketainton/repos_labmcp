@@ -10,6 +10,7 @@ from .config import get_settings
 from .gitea_api import GiteaOperationProvider
 from .n8n_api import N8NOperationProvider
 from .pocket_id_api import PocketIDOperationProvider
+from .tool_logging import ToolCallLoggingMiddleware
 from .version import get_version
 
 _settings = get_settings()
@@ -38,6 +39,7 @@ mcp = FastMCP(
         ),
     ],
 )
+mcp.add_middleware(ToolCallLoggingMiddleware())
 
 
 @mcp.tool()
