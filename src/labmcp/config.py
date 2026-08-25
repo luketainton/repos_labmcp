@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     shlink_url: str | None = None
     shlink_api_key: SecretStr | None = None
     shlink_api_version: str = "3"
+    pushover_api_url: str = "https://api.pushover.net"
+    pushover_app_token: SecretStr | None = None
+    pushover_user_key: SecretStr | None = None
     action1_url: str | None = "https://app.action1.com/api/3.0"
     action1_client_id: str | None = None
     action1_client_secret: SecretStr | None = None

@@ -10,6 +10,7 @@ from .config import get_settings
 from .gitea_api import GiteaOperationProvider
 from .n8n_api import N8NOperationProvider
 from .pocket_id_api import PocketIDOperationProvider
+from .pushover_api import PushoverOperationProvider, pushover_client
 from .shlink_api import ShlinkOperationProvider
 from .tool_logging import ToolCallLoggingMiddleware
 from .version import get_version
@@ -39,6 +40,9 @@ mcp = FastMCP(
             lambda: shlink_client(get_settings()),
             api_version=_settings.shlink_api_version,
             auth=_service_auth("shlink"),
+        ),
+        PushoverOperationProvider(
+            lambda: pushover_client(get_settings()), _service_auth("pushover")
         ),
         Action1OperationProvider(
             lambda: _action1_client, _service_auth("action1")

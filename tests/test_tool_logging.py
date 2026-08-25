@@ -56,3 +56,26 @@ async def test_tool_call_error_is_logged_as_output(monkeypatch, caplog):
         == 'user="anonymous" tool="gitea_list_repositories" params="{}" '
         'output="{\\"error\\":\\"unavailable\\"}"'
     )
+
+
+@pytest.mark.asyncio
+async def test_pushover_tool_call_contents_are_redacted(monkeypatch, caplog):
+    monkeypatch.setattr("labmcp.tool_logging.get_access_token", lambda: None)
+    context = MiddlewareContext(
+        message=SimpleNamespace(
+            name="pushover_send_notification", arguments={"message": "confidential"}
+        ),
+        method="tools/call",
+    )
+
+    async def call_next(_context):
+        return {"request": "also-confidential"}
+
+    with caplog.at_level(logging.INFO, logger=logger.name):
+        await ToolCallLoggingMiddleware().on_call_tool(context, call_next)
+
+    assert (
+        caplog.messages[-1]
+        == 'user="anonymous" tool="pushover_send_notification" '
+        'params="{\\"redacted\\":true}" output="{\\"redacted\\":true}"'
+    )

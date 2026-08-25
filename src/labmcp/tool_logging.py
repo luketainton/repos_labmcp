@@ -20,24 +20,29 @@ class ToolCallLoggingMiddleware(Middleware):
         user = _user(context)
         tool = context.message.name
         params = context.message.arguments or {}
+        redact_contents = tool.startswith("pushover_")
         try:
             result = await call_next(context)
         except Exception as error:
+            logged_params = _redacted() if redact_contents else _json(params)
+            logged_output = _redacted() if redact_contents else _json({"error": str(error)})
             logger.info(
                 'user="%s" tool="%s" params="%s" output="%s"',
                 _escape(user),
                 _escape(tool),
-                _escape(_json(params)),
-                _escape(_json({"error": str(error)})),
+                _escape(logged_params),
+                _escape(logged_output),
             )
             raise
 
+        logged_params = _redacted() if redact_contents else _json(params)
+        logged_output = _redacted() if redact_contents else _json(result)
         logger.info(
             'user="%s" tool="%s" params="%s" output="%s"',
             _escape(user),
             _escape(tool),
-            _escape(_json(params)),
-            _escape(_json(result)),
+            _escape(logged_params),
+            _escape(logged_output),
         )
         return result
 
@@ -63,6 +68,11 @@ def _json(value: Any) -> str:
     if hasattr(value, "model_dump"):
         value = value.model_dump(mode="json")
     return json.dumps(value, default=str, separators=(",", ":"), sort_keys=True)
+
+
+def _redacted() -> str:
+    """Return the fixed audit placeholder for confidential tool content."""
+    return '{"redacted":true}'
 
 
 def _escape(value: str) -> str:
