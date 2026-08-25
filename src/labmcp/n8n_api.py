@@ -11,6 +11,7 @@ from fastmcp.server.providers import Provider
 from fastmcp.tools import Tool
 
 from .clients import ServiceClient, ServiceClientFactory
+from .tool_annotations import api_operation_annotations
 
 _ALLOWED_METHODS = {"get", "post", "put", "patch", "delete"}
 _OPERATIONS_CACHE: dict[str, dict[str, "N8NOperation"]] = {}
@@ -133,7 +134,13 @@ def _make_operation_tool(
         f"n8n {operation.method} {operation.path}. "
         f"Use {'form' if operation.encoding == 'form' else 'JSON'} request data."
     )
-    return Tool.from_function(execute, name=tool_name, description=description, auth=auth)
+    return Tool.from_function(
+        execute,
+        name=tool_name,
+        description=description,
+        annotations=api_operation_annotations(operation.method),
+        auth=auth,
+    )
 
 
 def _tool_name(operation_name: str) -> str:

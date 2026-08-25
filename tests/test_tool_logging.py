@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 from fastmcp.server.middleware import MiddlewareContext
 
-from labmcp.tool_logging import ToolCallLoggingMiddleware, logger
+from labmcp.tool_logging import ToolCallLoggingMiddleware, _user, logger
 
 
 def test_tool_call_logger_uses_fastmcp_logging_hierarchy():
@@ -79,3 +79,38 @@ async def test_pushover_tool_call_contents_are_redacted(monkeypatch, caplog):
         == 'user="anonymous" tool="pushover_send_notification" '
         'params="{\\"redacted\\":true}" output="{\\"redacted\\":true}"'
     )
+
+
+@pytest.mark.parametrize(
+    ("claims", "client_id", "expected"),
+    [
+        ({"email": "alice@example.com"}, None, "alice@example.com"),
+        ({"sub": "subject-id"}, None, "subject-id"),
+        ({}, "client-id", "client-id"),
+    ],
+)
+def test_user_uses_claim_and_client_id_fallbacks(monkeypatch, claims, client_id, expected):
+    monkeypatch.setattr(
+        "labmcp.tool_logging.get_access_token",
+        lambda: SimpleNamespace(claims=claims, client_id=client_id),
+    )
+    context = SimpleNamespace(fastmcp_context=None)
+
+    assert _user(context) == expected
+
+
+def test_user_uses_fastmcp_client_id_when_no_access_token(monkeypatch):
+    monkeypatch.setattr("labmcp.tool_logging.get_access_token", lambda: None)
+    context = SimpleNamespace(fastmcp_context=SimpleNamespace(client_id="mcp-client"))
+
+    assert _user(context) == "mcp-client"
+
+
+def test_user_falls_back_to_fastmcp_context_after_empty_token(monkeypatch):
+    monkeypatch.setattr(
+        "labmcp.tool_logging.get_access_token",
+        lambda: SimpleNamespace(claims={}, client_id=None),
+    )
+    context = SimpleNamespace(fastmcp_context=SimpleNamespace(client_id="mcp-client"))
+
+    assert _user(context) == "mcp-client"

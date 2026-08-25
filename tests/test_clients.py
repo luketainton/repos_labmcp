@@ -5,7 +5,8 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 from labmcp.clients import (
-    Action1Client, ServiceClient, action1_client, gitea_client, pocket_id_client, shlink_client,
+    Action1Client, ServiceClient, action1_client, gitea_client, n8n_client, pocket_id_client,
+    shlink_client,
 )
 
 
@@ -68,6 +69,21 @@ async def test_service_client_returns_text_for_non_json_response(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_service_client_sends_form_data_and_handles_empty_responses(monkeypatch):
+    class EmptyResponseClient(RecordingAsyncClient):
+        response_kwargs = {}
+
+    monkeypatch.setattr(httpx, "AsyncClient", EmptyResponseClient)
+
+    result = await ServiceClient("https://service.example", None, 5.0).request(
+        "POST", "/messages", data={"message": "hello"}
+    )
+
+    assert result == {"status_code": 200}
+    assert EmptyResponseClient.requests[0]["data"] == {"message": "hello"}
+
+
+@pytest.mark.asyncio
 async def test_service_client_surfaces_upstream_error_details_to_tools(monkeypatch):
     class ConflictClient(RecordingAsyncClient):
         async def request(self, method, url, **kwargs):
@@ -97,12 +113,15 @@ def test_service_clients_use_service_specific_auth_headers():
         pocket_id_token=SimpleNamespace(get_secret_value=lambda: "pocket-secret"),
         shlink_url="https://links.example",
         shlink_api_key=SimpleNamespace(get_secret_value=lambda: "shlink-secret"),
+        n8n_url="https://n8n.example",
+        n8n_api_key=SimpleNamespace(get_secret_value=lambda: "n8n-secret"),
         http_timeout=10.0,
     )
 
     gitea = gitea_client(settings)
     pocket_id = pocket_id_client(settings)
     shlink = shlink_client(settings)
+    n8n = n8n_client(settings)
 
     assert (gitea.auth_header, gitea.auth_prefix, gitea.token) == (
         "Authorization",
@@ -118,6 +137,11 @@ def test_service_clients_use_service_specific_auth_headers():
         "X-Api-Key",
         "",
         "shlink-secret",
+    )
+    assert (n8n.auth_header, n8n.auth_prefix, n8n.token) == (
+        "X-N8N-API-KEY",
+        "",
+        "n8n-secret",
     )
 
 
@@ -155,6 +179,37 @@ async def test_action1_client_exchanges_and_caches_client_credentials(monkeypatc
         "Bearer action1-token",
         "Bearer action1-token",
     ]
+
+
+@pytest.mark.asyncio
+async def test_action1_client_requires_credentials() -> None:
+    client = Action1Client("https://app.action1.com/api/3.0", None, None, 10.0)
+
+    with pytest.raises(RuntimeError, match="ACTION1_CLIENT_ID and ACTION1_CLIENT_SECRET"):
+        await client._access_token()
+
+
+@pytest.mark.asyncio
+async def test_action1_client_rejects_failed_or_invalid_token_responses(monkeypatch) -> None:
+    class InvalidTokenClient(RecordingAsyncClient):
+        async def post(self, url, **kwargs):
+            return httpx.Response(200, request=httpx.Request("POST", url), json={})
+
+    monkeypatch.setattr(httpx, "AsyncClient", InvalidTokenClient)
+    client = Action1Client("https://app.action1.com/api/3.0", "client", "secret", 10.0)
+
+    with pytest.raises(ToolError, match="did not include access_token"):
+        await client._access_token()
+
+    class FailedTokenClient(RecordingAsyncClient):
+        async def post(self, url, **kwargs):
+            return httpx.Response(401, request=httpx.Request("POST", url), text="invalid credentials")
+
+    monkeypatch.setattr(httpx, "AsyncClient", FailedTokenClient)
+    client = Action1Client("https://app.action1.com/api/3.0", "client", "secret", 10.0)
+
+    with pytest.raises(ToolError, match="OAuth token request failed with 401"):
+        await client._access_token()
 
 
 def test_service_client_requires_a_base_url():

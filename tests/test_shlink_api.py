@@ -46,3 +46,15 @@ async def test_provider_exposes_documented_management_operations() -> None:
         "shlink_list_domains",
         "shlink_health",
     } <= names
+
+
+@pytest.mark.asyncio
+async def test_call_operation_rejects_unknown_invalid_version_and_incomplete_paths() -> None:
+    client = FakeClient()
+
+    with pytest.raises(ValueError, match="Unknown Shlink operation"):
+        await call_operation(client, "unknown")
+    with pytest.raises(ValueError, match="positive integer"):
+        await call_operation(client, "health", api_version="zero")
+    with pytest.raises(ValueError, match="requires path_params"):
+        await call_operation(client, "parse_short_code")

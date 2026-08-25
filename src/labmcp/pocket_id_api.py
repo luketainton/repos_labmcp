@@ -9,6 +9,7 @@ from fastmcp.server.providers import Provider
 from fastmcp.tools import Tool
 
 from .clients import ServiceClient, ServiceClientFactory
+from .tool_annotations import api_operation_annotations
 
 
 @dataclass(frozen=True)
@@ -223,7 +224,13 @@ def _make_operation_tool(
         f"Pocket ID {operation.method} {operation.path}. "
         f"Use {'form' if operation.encoding == 'form' else 'JSON'} request data."
     )
-    return Tool.from_function(execute, name=tool_name, description=description, auth=auth)
+    return Tool.from_function(
+        execute,
+        name=tool_name,
+        description=description,
+        annotations=api_operation_annotations(operation.method),
+        auth=auth,
+    )
 
 
 def _path_parameter_names(path: str) -> set[str]:

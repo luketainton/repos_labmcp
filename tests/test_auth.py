@@ -1,5 +1,6 @@
 import sys
 import types
+from types import SimpleNamespace
 
 import pytest
 
@@ -32,6 +33,20 @@ def test_jwt_auth_requires_audience() -> None:
 
     with pytest.raises(RuntimeError, match="MCP_AUTH_JWT_AUDIENCE"):
         create_auth_provider(settings)
+
+
+def test_jwt_auth_requires_issuer_and_public_base_url() -> None:
+    with pytest.raises(RuntimeError, match="MCP_AUTH_JWT_ISSUER or POCKET_ID_URL"):
+        create_auth_provider(Settings(mcp_auth_mode="jwt"))
+
+    with pytest.raises(RuntimeError, match="MCP_AUTH_BASE_URL"):
+        create_auth_provider(
+            Settings(
+                pocket_id_url="https://id.example.com",
+                mcp_auth_mode="jwt",
+                mcp_auth_jwt_audience="https://labmcp.example.com/mcp",
+            )
+        )
 
 
 def test_jwt_auth_derives_pocket_id_jwks(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -72,6 +87,43 @@ def test_jwt_auth_derives_pocket_id_jwks(monkeypatch: pytest.MonkeyPatch) -> Non
         "audience": "https://labmcp.example.com/mcp",
         "required_scopes": ["openid", "profile"],
     }
+
+
+@pytest.mark.asyncio
+async def test_jwt_verifier_requires_a_subject_claim(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeJWTVerifier:
+        result = None
+
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        async def verify_token(self, token: str):
+            return self.result
+
+    class FakeRemoteAuthProvider:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+
+    jwt_module = types.ModuleType("fastmcp.server.auth.providers.jwt")
+    jwt_module.JWTVerifier = FakeJWTVerifier
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth.providers.jwt", jwt_module)
+    auth_module = types.ModuleType("fastmcp.server.auth")
+    auth_module.RemoteAuthProvider = FakeRemoteAuthProvider
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth", auth_module)
+    provider = create_auth_provider(
+        Settings(
+            pocket_id_url="https://id.example.com",
+            mcp_auth_mode="jwt",
+            mcp_auth_base_url="https://labmcp.example.com",
+            mcp_auth_jwt_audience="https://labmcp.example.com/mcp",
+        )
+    )
+    verifier = provider.kwargs["token_verifier"]
+
+    FakeJWTVerifier.result = SimpleNamespace(claims={})
+    assert await verifier.verify_token("token") is None
+    FakeJWTVerifier.result = SimpleNamespace(claims={"sub": "alice"})
+    assert (await verifier.verify_token("token")).claims == {"sub": "alice"}
 
 
 def test_jwt_auth_advertises_service_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -121,6 +173,20 @@ def test_oidc_proxy_requires_public_base_url() -> None:
 
     with pytest.raises(RuntimeError, match="MCP_AUTH_BASE_URL"):
         create_auth_provider(settings)
+
+
+def test_oidc_proxy_requires_config_and_client_credentials() -> None:
+    with pytest.raises(RuntimeError, match="MCP_AUTH_OIDC_CONFIG_URL or POCKET_ID_URL"):
+        create_auth_provider(Settings(mcp_auth_mode="oidc_proxy", mcp_auth_base_url="https://labmcp.example.com"))
+
+    with pytest.raises(RuntimeError, match="MCP_AUTH_OIDC_CLIENT_ID"):
+        create_auth_provider(
+            Settings(
+                pocket_id_url="https://id.example.com",
+                mcp_auth_mode="oidc_proxy",
+                mcp_auth_base_url="https://labmcp.example.com",
+            )
+        )
 
 
 def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -200,6 +266,30 @@ def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyP
     )["scopes"] == ["openid", "offline_access", "groups"]
 
 
+@pytest.mark.asyncio
+async def test_oidc_proxy_extracts_group_claim_from_access_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeOIDCProxy:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+    oidc_module = types.ModuleType("fastmcp.server.auth.oidc_proxy")
+    oidc_module.OIDCProxy = FakeOIDCProxy
+    monkeypatch.setitem(sys.modules, "fastmcp.server.auth.oidc_proxy", oidc_module)
+    provider = create_auth_provider(
+        Settings(
+            pocket_id_url="https://id.example.com",
+            mcp_auth_mode="oidc_proxy",
+            mcp_auth_base_url="https://labmcp.example.com",
+            mcp_auth_oidc_client_id="labmcp",
+            mcp_auth_oidc_client_secret="secret",
+        )
+    )
+
+    token = "e30.eyJncm91cHMiOlsiYWRtaW4iXX0."
+    assert await provider._extract_upstream_claims({"access_token": token}) == {"groups": ["admin"]}
+    assert await provider._extract_upstream_claims({"access_token": "opaque"}) is None
+
+
 def test_decode_jwt_claims_extracts_payload() -> None:
     token = "eyJhbGciOiJub25lIn0.eyJncm91cHMiOlsiZ29kbW9kZSJdfQ."
 
@@ -208,3 +298,8 @@ def test_decode_jwt_claims_extracts_payload() -> None:
 
 def test_decode_jwt_claims_ignores_opaque_tokens() -> None:
     assert _decode_jwt_claims("opaque-access-token") == {}
+
+
+@pytest.mark.parametrize("token", [None, "one.two", "a.not-base64.c", "e30.bnVsbA.c"])
+def test_decode_jwt_claims_ignores_malformed_payloads(token: str | None) -> None:
+    assert _decode_jwt_claims(token) == {}

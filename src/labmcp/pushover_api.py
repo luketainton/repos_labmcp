@@ -5,6 +5,7 @@ from typing import Any
 
 from fastmcp.server.providers import Provider
 from fastmcp.tools import Tool
+from mcp.types import ToolAnnotations
 
 from .clients import ServiceClient, ServiceClientFactory
 from .config import Settings
@@ -103,5 +104,11 @@ def _make_send_notification_tool(client_factory: ServiceClientFactory, auth: Any
         execute,
         name="pushover_send_notification",
         description="Send a Pushover notification. Credentials are configured only on the server.",
+        annotations=ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=False,
+            idempotentHint=False,
+            openWorldHint=True,
+        ),
         auth=auth,
     )

@@ -9,6 +9,7 @@ from fastmcp.server.providers import Provider
 from fastmcp.tools import Tool
 
 from .clients import ServiceClient, ServiceClientFactory
+from .tool_annotations import api_operation_annotations
 
 
 @dataclass(frozen=True)
@@ -123,6 +124,7 @@ def _make_operation_tool(
         execute,
         name=tool_name,
         description=f"Shlink {operation.method} {path}. Use JSON request data.",
+        annotations=api_operation_annotations(operation.method),
         auth=auth,
     )
 

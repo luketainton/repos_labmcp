@@ -68,3 +68,15 @@ async def test_call_operation_rejects_unknown_or_incomplete_routes() -> None:
         await call_operation(client, "anything")
     with pytest.raises(ValueError, match="requires path_params"):
         await call_operation(client, "get_user_by_id")
+
+
+@pytest.mark.asyncio
+async def test_call_operation_rejects_mismatched_body_encodings() -> None:
+    client = FakeClient()
+
+    with pytest.raises(ValueError, match="either body or form"):
+        await call_operation(client, "introspect_oidc_tokens", body={}, form={"token": "value"})
+    with pytest.raises(ValueError, match="requires form data"):
+        await call_operation(client, "introspect_oidc_tokens", body={})
+    with pytest.raises(ValueError, match="requires a JSON body"):
+        await call_operation(client, "get_current_user", form={"unexpected": "value"})

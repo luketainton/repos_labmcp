@@ -1,6 +1,6 @@
 import pytest
 
-from labmcp.action1_api import Action1OperationProvider, call_operation
+from labmcp.action1_api import Action1Operation, Action1OperationProvider, call_operation
 
 
 class FakeClient:
@@ -38,3 +38,14 @@ async def test_provider_exposes_individual_action1_tools() -> None:
     names = {tool.name for tool in await provider.list_tools()}
 
     assert {"action1_list_endpoints", "action1_get_report", "action1_apply_automation"} <= names
+
+
+@pytest.mark.asyncio
+async def test_call_operation_rejects_unknown_or_incomplete_paths() -> None:
+    client = FakeClient()
+    operations = {"get": Action1Operation("GET", "/endpoints/{id}")}
+
+    with pytest.raises(ValueError, match="Unknown Action1 operation"):
+        await call_operation(client, "unknown", operations=operations)
+    with pytest.raises(ValueError, match="requires path_params"):
+        await call_operation(client, "get", operations=operations)
