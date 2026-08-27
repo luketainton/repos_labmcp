@@ -6,7 +6,7 @@ from fastmcp.exceptions import ToolError
 
 from labmcp.clients import (
     Action1Client, ServiceClient, action1_client, gitea_client, n8n_client, pocket_id_client,
-    shlink_client,
+    pangolin_client, shlink_client,
 )
 
 
@@ -115,6 +115,8 @@ def test_service_clients_use_service_specific_auth_headers():
         shlink_api_key=SimpleNamespace(get_secret_value=lambda: "shlink-secret"),
         n8n_url="https://n8n.example",
         n8n_api_key=SimpleNamespace(get_secret_value=lambda: "n8n-secret"),
+        pangolin_url="https://pangolin.example",
+        pangolin_api_key=SimpleNamespace(get_secret_value=lambda: "pangolin-secret"),
         http_timeout=10.0,
     )
 
@@ -122,6 +124,7 @@ def test_service_clients_use_service_specific_auth_headers():
     pocket_id = pocket_id_client(settings)
     shlink = shlink_client(settings)
     n8n = n8n_client(settings)
+    pangolin = pangolin_client(settings)
 
     assert (gitea.auth_header, gitea.auth_prefix, gitea.token) == (
         "Authorization",
@@ -142,6 +145,11 @@ def test_service_clients_use_service_specific_auth_headers():
         "X-N8N-API-KEY",
         "",
         "n8n-secret",
+    )
+    assert (pangolin.auth_header, pangolin.auth_prefix, pangolin.token) == (
+        "Authorization",
+        "Bearer",
+        "pangolin-secret",
     )
 
 

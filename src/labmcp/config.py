@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     n8n_url: str | None = None
     n8n_api_key: SecretStr | None = None
     n8n_api_path: str = "/api/v1"
+    pangolin_url: str | None = None
+    pangolin_api_key: SecretStr | None = None
+    pangolin_api_path: str = "/v1"
     shlink_url: str | None = None
     shlink_api_key: SecretStr | None = None
     shlink_api_version: str = "3"

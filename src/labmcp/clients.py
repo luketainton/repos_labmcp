@@ -101,6 +101,12 @@ def n8n_client(settings: Settings) -> ServiceClient:
     )
 
 
+def pangolin_client(settings: Settings) -> ServiceClient:
+    """Create a client for Pangolin's bearer-token authenticated Integration API."""
+    token = settings.pangolin_api_key.get_secret_value() if settings.pangolin_api_key else None
+    return ServiceClient(settings.pangolin_url, token, settings.http_timeout)
+
+
 def shlink_client(settings: Settings) -> ServiceClient:
     """Create a client for Shlink's API-key authenticated REST API."""
     token = settings.shlink_api_key.get_secret_value() if settings.shlink_api_key else None
