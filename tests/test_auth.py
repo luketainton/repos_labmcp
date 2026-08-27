@@ -193,6 +193,10 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
             self.kwargs = kwargs
+            self.advertised_scopes: list[str] | None = None
+
+        def update_default_scopes(self, scopes: list[str]) -> None:
+            self.advertised_scopes = scopes
 
         def _build_upstream_authorize_url(
             self, txn_id: str, transaction: dict[str, object]
@@ -234,11 +238,15 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
     assert provider._build_upstream_authorize_url(
         "transaction", {"scopes": ["openid", "profile"]}
     )["scopes"] == ["openid", "profile", "offline_access"]
+    assert provider.advertised_scopes == ["openid", "profile", "offline_access"]
 
 
 def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def update_default_scopes(self, scopes: list[str]) -> None:
             pass
 
         def _build_upstream_authorize_url(
@@ -270,6 +278,9 @@ def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyP
 async def test_oidc_proxy_extracts_group_claim_from_access_token(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def update_default_scopes(self, scopes: list[str]) -> None:
             pass
 
     oidc_module = types.ModuleType("fastmcp.server.auth.oidc_proxy")

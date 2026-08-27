@@ -137,7 +137,9 @@ def _create_oidc_proxy_auth_provider(settings: Settings) -> Any:
     if settings.mcp_auth_oidc_jwt_signing_key:
         kwargs["jwt_signing_key"] = settings.mcp_auth_oidc_jwt_signing_key.get_secret_value()
 
-    return LabOIDCProxy(**kwargs)
+    provider = LabOIDCProxy(**kwargs)
+    provider.update_default_scopes(_oidc_proxy_scopes(settings))
+    return provider
 
 
 def _decode_jwt_claims(token: Any) -> dict[str, Any]:
@@ -194,4 +196,19 @@ def _supported_scopes(settings: Settings) -> list[str]:
         for scope in service_scopes:
             if scope not in scopes:
                 scopes.append(scope)
+    return scopes
+
+
+def _oidc_proxy_scopes(settings: Settings) -> list[str]:
+    """Advertise the scopes available through the OIDC proxy.
+
+    Extra upstream scopes, such as ``offline_access``, must be advertised to
+    OAuth clients even though they are not required in access-token claims.
+    ChatGPT uses this metadata to determine whether it can maintain a
+    refreshable connector session.
+    """
+    scopes = _supported_scopes(settings)
+    for scope in _parse_scopes(settings.mcp_auth_oidc_extra_scopes) or []:
+        if scope not in scopes:
+            scopes.append(scope)
     return scopes
