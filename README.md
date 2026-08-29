@@ -63,7 +63,7 @@ uv sync --dev
 uv run labmcp
 ```
 
-The default transport is stdio, which works with MCP clients that launch local servers. For a network endpoint, set `MCP_TRANSPORT=http`, then configure `MCP_HOST` and `MCP_PORT`.
+The default transport is stdio, which works with MCP clients that launch local servers. For a network endpoint, set `MCP_TRANSPORT=http`, then configure `MCP_HOST` and `MCP_PORT`. One network process exposes the legacy full catalogue at `/mcp` and smaller per-application catalogues at `/gitea`, `/pocketid`, `/n8n`, `/pangolin`, `/shlink`, `/action1`, and `/pushover`. Connect ChatGPT or Codex to the application path you need.
 
 Gitea tokens and Pocket ID API keys should be supplied through secrets or environment variables, never committed to the repository. Pocket ID's API key can be created under `/settings/admin/api-keys`.
 
@@ -75,7 +75,7 @@ The server allows unauthenticated stdio because the MCP client starts a local pr
 
 To use Pocket ID's **Metadata document clients** (CIMD), run LabMCP as a JWT-verifying OAuth protected resource. This is the same model as Pocket ID's [MCP OAuth demo](https://github.com/pocket-id/mcp-oauth-demo): MCP clients authenticate directly with Pocket ID using their metadata documents, and LabMCP validates the resulting access tokens. No OIDC client, client secret, or LabMCP callback is required.
 
-Configure LabMCP with its public URL and the exact MCP endpoint URL. For the `http` transport, FastMCP serves the MCP endpoint at `/mcp`:
+Configure LabMCP with its public URL. For the `http` transport, the legacy full catalogue is at `/mcp`; each application path is also an independent OAuth resource:
 
 ```sh
 MCP_TRANSPORT=http
@@ -85,13 +85,15 @@ MCP_AUTH_JWT_AUDIENCE=https://labmcp.example.com/mcp
 MCP_AUTH_REQUIRED_SCOPES=groups
 ```
 
+At runtime LabMCP derives the audience for each mounted path from `MCP_AUTH_BASE_URL`, for example `https://labmcp.example.com/gitea/`. Register each path you intend to expose as a Pocket ID API resource. `MCP_AUTH_JWT_AUDIENCE` remains useful for the legacy configuration and stdio, but mounted network paths deliberately use their exact path audience.
+
 `MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to the issuer's `/.well-known/jwks.json` endpoint. LabMCP publishes OAuth protected-resource metadata that directs clients to Pocket ID; it verifies the token signature, issuer, audience, expiry, scopes, and subject before allowing a request.
 
 In Pocket ID, create an API whose **API resource** is exactly `https://labmcp.example.com/mcp`, configure the permissions/scopes LabMCP requires, then enable **Metadata document clients** for that API. Allow only the client metadata URLs you trust through Pocket ID’s `CIMD_URL_ALLOWLIST` (the Pocket ID demo pre-allows the Claude Code and Claude Desktop metadata URLs). Do not create a separate OIDC client for this flow.
 
 ### OIDC proxy clients
 
-Use `oidc_proxy` only when LabMCP itself should act as an OAuth client to Pocket ID. Create an OIDC client in Pocket ID for LabMCP, add the callback URL `https://labmcp.example.com/auth/callback`, then configure:
+Use `oidc_proxy` only when LabMCP itself should act as an OAuth client to Pocket ID. Create an OIDC client in Pocket ID for LabMCP and add a callback URL for every path clients will use (for example, `https://labmcp.example.com/gitea/auth/callback`), then configure:
 
 ```sh
 MCP_TRANSPORT=sse

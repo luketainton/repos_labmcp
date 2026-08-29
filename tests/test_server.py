@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from labmcp import server
+from labmcp.config import Settings
 
 
 class FakeClient:
@@ -42,6 +43,53 @@ async def test_static_tools_expose_mcp_behavior_annotations() -> None:
         "readOnlyHint": False,
         "openWorldHint": True,
     }
+
+
+@pytest.mark.asyncio
+async def test_service_catalogues_only_expose_their_own_tools() -> None:
+    settings = Settings(mcp_transport="http", mcp_auth_mode="none")
+    gitea = server.create_mcp(settings, "gitea")
+    pocket_id = server.create_mcp(settings, "pocket_id")
+
+    assert await gitea.get_tool("labmcp_get_version") is not None
+    assert await gitea.get_tool("gitea_list_repositories") is not None
+    assert await gitea.get_tool("pocket_id_health") is None
+    assert await pocket_id.get_tool("labmcp_get_version") is not None
+    assert await pocket_id.get_tool("pocket_id_health") is not None
+    assert await pocket_id.get_tool("gitea_list_repositories") is None
+
+
+def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> None:
+    settings = Settings(
+        mcp_transport="http",
+        mcp_auth_mode="none",
+        mcp_auth_base_url="https://mcp.example.com/",
+    )
+    app = server.create_network_app(settings)
+
+    assert [route.path for route in app.routes] == [
+        "/mcp",
+        "/gitea",
+        "/pocketid",
+        "/n8n",
+        "/pangolin",
+        "/shlink",
+        "/action1",
+        "/pushover",
+    ]
+    gitea_settings = server._path_settings(settings, "gitea")
+    assert gitea_settings.mcp_auth_base_url == "https://mcp.example.com/gitea/"
+    assert gitea_settings.mcp_auth_jwt_audience == "https://mcp.example.com/gitea/"
+
+
+@pytest.mark.asyncio
+async def test_network_app_starts_each_mounted_fastmcp_lifespan() -> None:
+    app = server.create_network_app(Settings(mcp_transport="http", mcp_auth_mode="none"))
+
+    async with app.router.lifespan_context(app):
+        mounted_gitea = app.routes[1].app
+        assert mounted_gitea.state.fastmcp_server is not None
+
 
 
 @pytest.mark.asyncio
