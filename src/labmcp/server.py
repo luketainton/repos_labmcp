@@ -46,11 +46,13 @@ def _path_settings(settings: Settings, path: str) -> Settings:
     if not base_url:
         return settings
     # ``http_app(path='/')`` serves the mounted endpoint with a trailing slash.
-    # Keep the OAuth audience byte-for-byte aligned with that canonical URL.
+    # In direct JWT mode the endpoint is also the token audience. OIDC proxy
+    # mode instead validates upstream tokens against its registered client ID.
     resource_url = f"{base_url.rstrip('/')}/{path}/"
-    return settings.model_copy(
-        update={"mcp_auth_base_url": resource_url, "mcp_auth_jwt_audience": resource_url}
-    )
+    update: dict[str, str] = {"mcp_auth_base_url": resource_url}
+    if settings.mcp_auth_mode == "jwt":
+        update["mcp_auth_jwt_audience"] = resource_url
+    return settings.model_copy(update=update)
 
 
 def _providers_for(service: str, settings: Settings) -> list[Any]:

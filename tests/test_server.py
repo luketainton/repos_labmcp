@@ -77,9 +77,28 @@ def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> No
         "/action1",
         "/pushover",
     ]
-    gitea_settings = server._path_settings(settings, "gitea")
+    jwt_settings = Settings(
+        mcp_transport="http",
+        mcp_auth_mode="jwt",
+        mcp_auth_base_url="https://mcp.example.com/",
+    )
+    gitea_settings = server._path_settings(jwt_settings, "gitea")
     assert gitea_settings.mcp_auth_base_url == "https://mcp.example.com/gitea/"
     assert gitea_settings.mcp_auth_jwt_audience == "https://mcp.example.com/gitea/"
+
+
+def test_path_settings_preserves_oidc_proxy_upstream_audience() -> None:
+    settings = Settings(
+        mcp_transport="http",
+        mcp_auth_mode="oidc_proxy",
+        mcp_auth_base_url="https://mcp.example.com/",
+        mcp_auth_jwt_audience="pocket-id-client-id",
+    )
+
+    gitea_settings = server._path_settings(settings, "gitea")
+
+    assert gitea_settings.mcp_auth_base_url == "https://mcp.example.com/gitea/"
+    assert gitea_settings.mcp_auth_jwt_audience == "pocket-id-client-id"
 
 
 @pytest.mark.asyncio
