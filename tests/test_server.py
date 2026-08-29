@@ -72,6 +72,7 @@ def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> No
         "/gitea",
         "/pocketid",
         "/n8n",
+        "/meraki",
         "/pangolin",
         "/shlink",
         "/action1",

@@ -2,6 +2,7 @@ import pytest
 
 from labmcp.action1_api import Action1OperationProvider
 from labmcp.gitea_api import GiteaOperation, _make_operation_tool as make_gitea_tool
+from labmcp.meraki_api import MerakiOperation, _make_operation_tool as make_meraki_tool
 from labmcp.n8n_api import N8NOperation, _make_operation_tool as make_n8n_tool
 from labmcp.pangolin_api import PangolinOperation, _make_operation_tool as make_pangolin_tool
 from labmcp.pocket_id_api import PocketIDOperation, _make_operation_tool as make_pocket_id_tool
@@ -47,6 +48,11 @@ async def test_all_operation_providers_attach_http_annotations() -> None:
     n8n = make_n8n_tool(
         "get", N8NOperation("GET", "/users", "json"), {"get": N8NOperation("GET", "/users", "json")}, client_factory, None
     )
+    meraki = make_meraki_tool(
+        "getOrganizations", MerakiOperation("GET", "/api/v1/organizations", "json"),
+        {"getOrganizations": MerakiOperation("GET", "/api/v1/organizations", "json")},
+        client_factory, None,
+    )
     pocket_id = make_pocket_id_tool("get", PocketIDOperation("GET", "/users"), client_factory, None)
     pangolin = make_pangolin_tool(
         "get:/users", PangolinOperation("GET", "/v1/users", "json"),
@@ -57,6 +63,6 @@ async def test_all_operation_providers_attach_http_annotations() -> None:
 
     assert all(
         tool.annotations.readOnlyHint is True and tool.annotations.openWorldHint is True
-        for tool in (gitea, n8n, pocket_id, pangolin, shlink)
+        for tool in (gitea, n8n, meraki, pocket_id, pangolin, shlink)
     )
     assert all(tool.annotations.openWorldHint is True for tool in await action1.list_tools())

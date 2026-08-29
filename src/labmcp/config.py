@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     n8n_url: str | None = None
     n8n_api_key: SecretStr | None = None
     n8n_api_path: str = "/api/v1"
+    meraki_url: str | None = "https://api.meraki.com"
+    meraki_dashboard_api_key: SecretStr | None = None
+    meraki_api_path: str = "/api/v1"
+    meraki_openapi_url: str = "https://raw.githubusercontent.com/meraki/openapi/master/openapi/spec3.json"
     pangolin_url: str | None = None
     pangolin_api_key: SecretStr | None = None
     pangolin_api_path: str = "/v1"

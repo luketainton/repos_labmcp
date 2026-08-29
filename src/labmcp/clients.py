@@ -101,6 +101,16 @@ def n8n_client(settings: Settings) -> ServiceClient:
     )
 
 
+def meraki_client(settings: Settings) -> ServiceClient:
+    """Create a client for Meraki's bearer-token authenticated Dashboard API."""
+    token = (
+        settings.meraki_dashboard_api_key.get_secret_value()
+        if settings.meraki_dashboard_api_key
+        else None
+    )
+    return ServiceClient(settings.meraki_url, token, settings.http_timeout)
+
+
 def pangolin_client(settings: Settings) -> ServiceClient:
     """Create a client for Pangolin's bearer-token authenticated Integration API."""
     token = settings.pangolin_api_key.get_secret_value() if settings.pangolin_api_key else None

@@ -11,9 +11,10 @@ from starlette.routing import Mount
 from .action1_api import Action1OperationProvider
 from .auth import NETWORK_TRANSPORTS, create_auth_provider, ensure_network_transport_is_authenticated
 from .authorization import require_service_access
-from .clients import action1_client, gitea_client, n8n_client, pangolin_client, pocket_id_client, shlink_client
+from .clients import action1_client, gitea_client, meraki_client, n8n_client, pangolin_client, pocket_id_client, shlink_client
 from .config import Settings, get_settings
 from .gitea_api import GiteaOperationProvider
+from .meraki_api import MerakiOperationProvider
 from .n8n_api import N8NOperationProvider
 from .pangolin_api import PangolinOperationProvider
 from .pocket_id_api import PocketIDOperationProvider
@@ -29,6 +30,7 @@ SERVICE_PATHS = {
     "gitea": "gitea",
     "pocketid": "pocket_id",
     "n8n": "n8n",
+    "meraki": "meraki",
     "pangolin": "pangolin",
     "shlink": "shlink",
     "action1": "action1",
@@ -62,6 +64,8 @@ def _providers_for(service: str, settings: Settings) -> list[Any]:
         return [PocketIDOperationProvider(lambda: pocket_id_client(get_settings()), _service_auth(service, settings))]
     if service == "n8n":
         return [N8NOperationProvider(lambda: n8n_client(get_settings()), api_path=settings.n8n_api_path, auth=_service_auth(service, settings))]
+    if service == "meraki":
+        return [MerakiOperationProvider(lambda: meraki_client(get_settings()), openapi_url=settings.meraki_openapi_url, api_path=settings.meraki_api_path, timeout=settings.http_timeout, auth=_service_auth(service, settings))]
     if service == "pangolin":
         return [PangolinOperationProvider(lambda: pangolin_client(get_settings()), api_path=settings.pangolin_api_path, auth=_service_auth(service, settings))]
     if service == "shlink":
