@@ -104,9 +104,7 @@ def _create_oidc_proxy_auth_provider(settings: Settings) -> Any:
                     return {claim_name: claims[claim_name]}
             return None
 
-        def _build_upstream_authorize_url(
-            self, txn_id: str, transaction: dict[str, Any]
-        ) -> str:
+        def _build_upstream_authorize_url(self, txn_id: str, transaction: dict[str, Any]) -> str:
             """Request configured upstream scopes, including offline access.
 
             FastMCP handles storing, refreshing, rotating, and revoking upstream
@@ -159,7 +157,7 @@ def _decode_jwt_claims(token: Any) -> dict[str, Any]:
         padding = "=" * (-len(parts[1]) % 4)
         payload = base64.urlsafe_b64decode(parts[1] + padding)
         claims = json.loads(payload)
-    except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
+    except ValueError, json.JSONDecodeError, UnicodeDecodeError:
         return {}
     return claims if isinstance(claims, dict) else {}
 

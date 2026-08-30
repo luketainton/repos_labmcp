@@ -9,9 +9,21 @@ from starlette.applications import Starlette
 from starlette.routing import Mount
 
 from .action1_api import Action1OperationProvider
-from .auth import NETWORK_TRANSPORTS, create_auth_provider, ensure_network_transport_is_authenticated
+from .auth import (
+    NETWORK_TRANSPORTS,
+    create_auth_provider,
+    ensure_network_transport_is_authenticated,
+)
 from .authorization import require_service_access
-from .clients import action1_client, gitea_client, meraki_client, n8n_client, pangolin_client, pocket_id_client, shlink_client
+from .clients import (
+    action1_client,
+    gitea_client,
+    meraki_client,
+    n8n_client,
+    pangolin_client,
+    pocket_id_client,
+    shlink_client,
+)
 from .config import Settings, get_settings
 from .gitea_api import GiteaOperationProvider
 from .meraki_api import MerakiOperationProvider
@@ -59,21 +71,63 @@ def _path_settings(settings: Settings, path: str) -> Settings:
 
 def _providers_for(service: str, settings: Settings) -> list[Any]:
     if service == "gitea":
-        return [GiteaOperationProvider(lambda: gitea_client(get_settings()), _service_auth(service, settings))]
+        return [
+            GiteaOperationProvider(
+                lambda: gitea_client(get_settings()), _service_auth(service, settings)
+            )
+        ]
     if service == "pocket_id":
-        return [PocketIDOperationProvider(lambda: pocket_id_client(get_settings()), _service_auth(service, settings))]
+        return [
+            PocketIDOperationProvider(
+                lambda: pocket_id_client(get_settings()), _service_auth(service, settings)
+            )
+        ]
     if service == "n8n":
-        return [N8NOperationProvider(lambda: n8n_client(get_settings()), api_path=settings.n8n_api_path, auth=_service_auth(service, settings))]
+        return [
+            N8NOperationProvider(
+                lambda: n8n_client(get_settings()),
+                api_path=settings.n8n_api_path,
+                auth=_service_auth(service, settings),
+            )
+        ]
     if service == "meraki":
-        return [MerakiOperationProvider(lambda: meraki_client(get_settings()), openapi_url=settings.meraki_openapi_url, api_path=settings.meraki_api_path, timeout=settings.http_timeout, auth=_service_auth(service, settings))]
+        return [
+            MerakiOperationProvider(
+                lambda: meraki_client(get_settings()),
+                openapi_url=settings.meraki_openapi_url,
+                api_path=settings.meraki_api_path,
+                timeout=settings.http_timeout,
+                auth=_service_auth(service, settings),
+            )
+        ]
     if service == "pangolin":
-        return [PangolinOperationProvider(lambda: pangolin_client(get_settings()), api_path=settings.pangolin_api_path, auth=_service_auth(service, settings))]
+        return [
+            PangolinOperationProvider(
+                lambda: pangolin_client(get_settings()),
+                api_path=settings.pangolin_api_path,
+                auth=_service_auth(service, settings),
+            )
+        ]
     if service == "shlink":
-        return [ShlinkOperationProvider(lambda: shlink_client(get_settings()), api_version=settings.shlink_api_version, auth=_service_auth(service, settings))]
+        return [
+            ShlinkOperationProvider(
+                lambda: shlink_client(get_settings()),
+                api_version=settings.shlink_api_version,
+                auth=_service_auth(service, settings),
+            )
+        ]
     if service == "pushover":
-        return [PushoverOperationProvider(lambda: pushover_client(get_settings()), _service_auth(service, settings))]
+        return [
+            PushoverOperationProvider(
+                lambda: pushover_client(get_settings()), _service_auth(service, settings)
+            )
+        ]
     if service == "action1":
-        return [Action1OperationProvider(lambda: action1_client(settings), _service_auth(service, settings))]
+        return [
+            Action1OperationProvider(
+                lambda: action1_client(settings), _service_auth(service, settings)
+            )
+        ]
     raise ValueError(f"Unknown LabMCP service: {service}")
 
 
@@ -98,7 +152,9 @@ def _add_gitea_tools(app: FastMCP, settings: Settings) -> None:
 def _add_pocket_id_tools(app: FastMCP, settings: Settings) -> None:
     auth = _service_auth("pocket_id", settings)
     for tool in (pocket_id_openid_configuration, pocket_id_health):
-        app.tool(tool, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True), auth=auth)
+        app.tool(
+            tool, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True), auth=auth
+        )
 
 
 def create_mcp(settings: Settings, service: str | None = None) -> FastMCP:
@@ -107,7 +163,9 @@ def create_mcp(settings: Settings, service: str | None = None) -> FastMCP:
     app = FastMCP(
         f"Home Lab ({get_version()})",
         auth=create_auth_provider(settings),
-        providers=[provider for name in selected_services for provider in _providers_for(name, settings)],
+        providers=[
+            provider for name in selected_services for provider in _providers_for(name, settings)
+        ],
     )
     app.add_middleware(ToolCallLoggingMiddleware())
     _add_common_tools(app)
@@ -142,7 +200,9 @@ def create_network_app(settings: Settings) -> Starlette:
     )
 
 
-async def gitea_list_repositories(page: int = 1, limit: int = 50, *, private: bool | None = None) -> list[dict[str, Any]]:
+async def gitea_list_repositories(
+    page: int = 1, limit: int = 50, *, private: bool | None = None
+) -> list[dict[str, Any]]:
     """List repositories visible to the configured Gitea token."""
     if page < 1 or not 1 <= limit <= 100:
         raise ValueError("page must be positive and limit must be between 1 and 100")
@@ -157,25 +217,35 @@ async def gitea_get_repository(owner: str, repo: str) -> dict[str, Any]:
     return await gitea_client(get_settings()).request("GET", f"/api/v1/repos/{owner}/{repo}")
 
 
-async def gitea_list_issues(owner: str, repo: str, state: str = "open", page: int = 1, limit: int = 50) -> list[dict[str, Any]]:
+async def gitea_list_issues(
+    owner: str, repo: str, state: str = "open", page: int = 1, limit: int = 50
+) -> list[dict[str, Any]]:
     """List issues for a Gitea repository."""
     if state not in {"open", "closed", "all"}:
         raise ValueError("state must be open, closed, or all")
     if page < 1 or not 1 <= limit <= 100:
         raise ValueError("page must be positive and limit must be between 1 and 100")
-    return await gitea_client(get_settings()).request("GET", f"/api/v1/repos/{owner}/{repo}/issues", params={"state": state, "page": page, "limit": limit})
+    return await gitea_client(get_settings()).request(
+        "GET",
+        f"/api/v1/repos/{owner}/{repo}/issues",
+        params={"state": state, "page": page, "limit": limit},
+    )
 
 
 async def gitea_create_issue(owner: str, repo: str, title: str, body: str = "") -> dict[str, Any]:
     """Create an issue in a Gitea repository."""
     if not title.strip():
         raise ValueError("title must not be empty")
-    return await gitea_client(get_settings()).request("POST", f"/api/v1/repos/{owner}/{repo}/issues", json={"title": title, "body": body})
+    return await gitea_client(get_settings()).request(
+        "POST", f"/api/v1/repos/{owner}/{repo}/issues", json={"title": title, "body": body}
+    )
 
 
 async def pocket_id_openid_configuration() -> dict[str, Any]:
     """Read Pocket ID's OpenID Connect discovery document."""
-    return await pocket_id_client(get_settings()).request("GET", "/.well-known/openid-configuration")
+    return await pocket_id_client(get_settings()).request(
+        "GET", "/.well-known/openid-configuration"
+    )
 
 
 async def pocket_id_health() -> Any:

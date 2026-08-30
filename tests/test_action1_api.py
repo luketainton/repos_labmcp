@@ -26,9 +26,13 @@ async def test_call_operation_encodes_paths_and_forwards_arguments() -> None:
     )
 
     assert result == {"ok": True}
-    assert client.calls == [("GET", "/endpoints/managed/acme%2Feu/endpoint%2F1", {
-        "params": {"details": True}, "json": None
-    })]
+    assert client.calls == [
+        (
+            "GET",
+            "/endpoints/managed/acme%2Feu/endpoint%2F1",
+            {"params": {"details": True}, "json": None},
+        )
+    ]
 
 
 @pytest.mark.asyncio

@@ -27,10 +27,13 @@ async def test_call_operation_uses_configured_version_and_encodes_path_parameter
     )
 
     assert result == {"ok": True}
-    assert client.calls == [(
-        "GET", "/rest/v3/short-urls/campaign%2Fsummer",
-        {"params": {"domain": "links.example"}, "json": None},
-    )]
+    assert client.calls == [
+        (
+            "GET",
+            "/rest/v3/short-urls/campaign%2Fsummer",
+            {"params": {"domain": "links.example"}, "json": None},
+        )
+    ]
 
 
 @pytest.mark.asyncio

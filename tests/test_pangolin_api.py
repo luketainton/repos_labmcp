@@ -51,7 +51,19 @@ def test_parse_operations_rejects_invalid_or_empty_documents() -> None:
     with pytest.raises(ValueError, match="does not contain paths"):
         parse_operations({})
     with pytest.raises(ValueError, match="no supported operations"):
-        parse_operations({"paths": {"/upload": {"post": {"requestBody": {"content": {"multipart/form-data": {"schema": {"format": "binary"}}}}}}}})
+        parse_operations(
+            {
+                "paths": {
+                    "/upload": {
+                        "post": {
+                            "requestBody": {
+                                "content": {"multipart/form-data": {"schema": {"format": "binary"}}}
+                            }
+                        }
+                    }
+                }
+            }
+        )
 
 
 @pytest.mark.asyncio
@@ -110,7 +122,9 @@ async def test_get_operations_caches_live_openapi_document(monkeypatch: pytest.M
 
 
 @pytest.mark.asyncio
-async def test_operation_provider_exposes_one_tool_per_openapi_operation(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_operation_provider_exposes_one_tool_per_openapi_operation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = FakeClient()
     operations = parse_operations({"paths": {"/orgs": {"get": {}}, "/org/{orgId}": {"delete": {}}}})
 

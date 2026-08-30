@@ -60,9 +60,7 @@ def test_unmapped_service_is_denied_when_scope_mapping_is_enabled() -> None:
 
 
 def test_service_scope_access_requires_an_allowed_scope() -> None:
-    settings = Settings(
-        mcp_service_scopes={"gitea": ["labmcp:gitea", "labmcp:admin"]}
-    )
+    settings = Settings(mcp_service_scopes={"gitea": ["labmcp:gitea", "labmcp:admin"]})
     check = require_service_access("gitea", settings)
 
     assert check is not None

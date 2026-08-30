@@ -44,19 +44,29 @@ async def test_all_operation_providers_attach_http_annotations() -> None:
 
     def client_factory():
         return type("Client", (), {"request": request})()
+
     gitea = make_gitea_tool("get", GiteaOperation("GET", "/users", "json"), client_factory, None)
     n8n = make_n8n_tool(
-        "get", N8NOperation("GET", "/users", "json"), {"get": N8NOperation("GET", "/users", "json")}, client_factory, None
+        "get",
+        N8NOperation("GET", "/users", "json"),
+        {"get": N8NOperation("GET", "/users", "json")},
+        client_factory,
+        None,
     )
     meraki = make_meraki_tool(
-        "getOrganizations", MerakiOperation("GET", "/api/v1/organizations", "json"),
+        "getOrganizations",
+        MerakiOperation("GET", "/api/v1/organizations", "json"),
         {"getOrganizations": MerakiOperation("GET", "/api/v1/organizations", "json")},
-        client_factory, None,
+        client_factory,
+        None,
     )
     pocket_id = make_pocket_id_tool("get", PocketIDOperation("GET", "/users"), client_factory, None)
     pangolin = make_pangolin_tool(
-        "get:/users", PangolinOperation("GET", "/v1/users", "json"),
-        {"get:/users": PangolinOperation("GET", "/v1/users", "json")}, client_factory, None,
+        "get:/users",
+        PangolinOperation("GET", "/v1/users", "json"),
+        {"get:/users": PangolinOperation("GET", "/v1/users", "json")},
+        client_factory,
+        None,
     )
     shlink = make_shlink_tool("get", ShlinkOperation("GET", "/users"), client_factory, "3", None)
     action1 = Action1OperationProvider(client_factory)

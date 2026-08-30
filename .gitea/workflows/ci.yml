@@ -6,38 +6,19 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.0.1
-        with:
-          enable-cache: true
-
-      - name: Install Python 3.14
-        run: uv python install 3.14
-
-      - name: Install dependencies
-        run: uv sync --dev
-
-      - name: Check formatting and lint
-        run: uv run ruff check .
-
-      - name: Run unit tests with coverage
-        run: |
-          uv run coverage run -m pytest -v --junitxml=testresults.xml
-          uv run coverage report
-          uv run coverage xml -q -o coverage.xml
-
-      - name: Verify Python compilation
-        run: uv run python -m compileall -q src tests
-
-      - name: Build Docker image
-        run: docker build --tag labmcp:ci .
+  ci:
+    uses: actions/gha-workflows/.gitea/workflows/ci-python-unified.yml@main
+    with:
+      package-manager: uv
+      python-version: '3.14'
+      docker-enabled: true
+      sonarqube: true
+      security-scan: true
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

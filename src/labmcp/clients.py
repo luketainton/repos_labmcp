@@ -187,5 +187,11 @@ class Action1Client(ServiceClient):
 
 def action1_client(settings: Settings) -> Action1Client:
     """Create an OAuth client-credentials client for Action1's REST API."""
-    secret = settings.action1_client_secret.get_secret_value() if settings.action1_client_secret else None
-    return Action1Client(settings.action1_url, settings.action1_client_id, secret, settings.http_timeout)
+    secret = (
+        settings.action1_client_secret.get_secret_value()
+        if settings.action1_client_secret
+        else None
+    )
+    return Action1Client(
+        settings.action1_url, settings.action1_client_id, secret, settings.http_timeout
+    )

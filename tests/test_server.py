@@ -111,7 +111,6 @@ async def test_network_app_starts_each_mounted_fastmcp_lifespan() -> None:
         assert mounted_gitea.state.fastmcp_server is not None
 
 
-
 @pytest.mark.asyncio
 async def test_gitea_list_issues_maps_filters_and_pagination(monkeypatch):
     client = FakeClient([{"number": 1}])
@@ -179,7 +178,9 @@ def test_main_validates_transport_then_runs_server(monkeypatch):
     settings = SimpleNamespace(mcp_transport="stdio", mcp_host="127.0.0.1", mcp_port=8765)
     calls = []
     monkeypatch.setattr(server, "get_settings", lambda: settings)
-    monkeypatch.setattr(server, "ensure_network_transport_is_authenticated", lambda value: calls.append(value))
+    monkeypatch.setattr(
+        server, "ensure_network_transport_is_authenticated", lambda value: calls.append(value)
+    )
     monkeypatch.setattr(server.mcp, "run", lambda **kwargs: calls.append(kwargs))
 
     server.main()

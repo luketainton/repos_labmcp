@@ -5,8 +5,15 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 from labmcp.clients import (
-    Action1Client, ServiceClient, action1_client, gitea_client, meraki_client, n8n_client,
-    pocket_id_client, pangolin_client, shlink_client,
+    Action1Client,
+    ServiceClient,
+    action1_client,
+    gitea_client,
+    meraki_client,
+    n8n_client,
+    pocket_id_client,
+    pangolin_client,
+    shlink_client,
 )
 
 
@@ -191,7 +198,9 @@ async def test_action1_client_exchanges_and_caches_client_credentials(monkeypatc
         "headers": {"Content-Type": "application/x-www-form-urlencoded"},
         "data": {"client_id": "client-id", "client_secret": "client-secret"},
     }
-    assert [request["headers"]["Authorization"] for request in Action1RecordingClient.requests[1:]] == [
+    assert [
+        request["headers"]["Authorization"] for request in Action1RecordingClient.requests[1:]
+    ] == [
         "Bearer action1-token",
         "Bearer action1-token",
     ]
@@ -219,7 +228,9 @@ async def test_action1_client_rejects_failed_or_invalid_token_responses(monkeypa
 
     class FailedTokenClient(RecordingAsyncClient):
         async def post(self, url, **kwargs):
-            return httpx.Response(401, request=httpx.Request("POST", url), text="invalid credentials")
+            return httpx.Response(
+                401, request=httpx.Request("POST", url), text="invalid credentials"
+            )
 
     monkeypatch.setattr(httpx, "AsyncClient", FailedTokenClient)
     client = Action1Client("https://app.action1.com/api/3.0", "client", "secret", 10.0)

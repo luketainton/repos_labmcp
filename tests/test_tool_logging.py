@@ -13,9 +13,7 @@ def test_tool_call_logger_uses_fastmcp_logging_hierarchy():
 
 @pytest.mark.asyncio
 async def test_tool_call_log_contains_user_tool_parameters_and_output(monkeypatch, caplog):
-    token = SimpleNamespace(
-        claims={"preferred_username": 'alice"example'}, client_id="client-id"
-    )
+    token = SimpleNamespace(claims={"preferred_username": 'alice"example'}, client_id="client-id")
     monkeypatch.setattr("labmcp.tool_logging.get_access_token", lambda: token)
     context = MiddlewareContext(
         message=SimpleNamespace(name="gitea_list_repositories", arguments={"page": 2}),
@@ -30,8 +28,7 @@ async def test_tool_call_log_contains_user_tool_parameters_and_output(monkeypatc
 
     assert result == {"repositories": ["notes"]}
     assert (
-        caplog.messages[-1]
-        == 'user="alice\\"example" tool="gitea_list_repositories" '
+        caplog.messages[-1] == 'user="alice\\"example" tool="gitea_list_repositories" '
         'params="{\\"page\\":2}" output="{\\"repositories\\":[\\"notes\\"]}"'
     )
 
@@ -52,8 +49,7 @@ async def test_tool_call_error_is_logged_as_output(monkeypatch, caplog):
             await ToolCallLoggingMiddleware().on_call_tool(context, call_next)
 
     assert (
-        caplog.messages[-1]
-        == 'user="anonymous" tool="gitea_list_repositories" params="{}" '
+        caplog.messages[-1] == 'user="anonymous" tool="gitea_list_repositories" params="{}" '
         'output="{\\"error\\":\\"unavailable\\"}"'
     )
 
@@ -75,8 +71,7 @@ async def test_pushover_tool_call_contents_are_redacted(monkeypatch, caplog):
         await ToolCallLoggingMiddleware().on_call_tool(context, call_next)
 
     assert (
-        caplog.messages[-1]
-        == 'user="anonymous" tool="pushover_send_notification" '
+        caplog.messages[-1] == 'user="anonymous" tool="pushover_send_notification" '
         'params="{\\"redacted\\":true}" output="{\\"redacted\\":true}"'
     )
 

@@ -113,8 +113,12 @@ def _make_operation_tool(
         body: Any = None,
     ) -> Any:
         return await call_operation(
-            client_factory(), operation_name, api_version=api_version,
-            path_params=path_params, query=query, body=body,
+            client_factory(),
+            operation_name,
+            api_version=api_version,
+            path_params=path_params,
+            query=query,
+            body=body,
         )
 
     tool_name = f"shlink_{operation_name}"

@@ -24,7 +24,9 @@ class N8NOperation:
     encoding: str
 
 
-def parse_operations(specification: Mapping[str, Any], api_path: str = "/api/v1") -> dict[str, N8NOperation]:
+def parse_operations(
+    specification: Mapping[str, Any], api_path: str = "/api/v1"
+) -> dict[str, N8NOperation]:
     """Parse an OpenAPI 3 document into safe, callable operation metadata."""
     paths = specification.get("paths")
     if not isinstance(paths, Mapping):
@@ -91,7 +93,9 @@ async def call_operation(
 class N8NOperationProvider(Provider):
     """Expose one MCP tool for every supported operation in n8n's live spec."""
 
-    def __init__(self, client_factory: ServiceClientFactory, api_path: str = "/api/v1", auth: Any = None) -> None:
+    def __init__(
+        self, client_factory: ServiceClientFactory, api_path: str = "/api/v1", auth: Any = None
+    ) -> None:
         super().__init__()
         self._client_factory = client_factory
         self._api_path = api_path
@@ -124,8 +128,13 @@ def _make_operation_tool(
         form: dict[str, Any] | None = None,
     ) -> Any:
         return await call_operation(
-            client_factory(), operation_name, operations=operations,
-            path_params=path_params, query=query, body=body, form=form,
+            client_factory(),
+            operation_name,
+            operations=operations,
+            path_params=path_params,
+            query=query,
+            body=body,
+            form=form,
         )
 
     tool_name = _tool_name(operation_name)

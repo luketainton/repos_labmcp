@@ -177,7 +177,9 @@ def test_oidc_proxy_requires_public_base_url() -> None:
 
 def test_oidc_proxy_requires_config_and_client_credentials() -> None:
     with pytest.raises(RuntimeError, match="MCP_AUTH_OIDC_CONFIG_URL or POCKET_ID_URL"):
-        create_auth_provider(Settings(mcp_auth_mode="oidc_proxy", mcp_auth_base_url="https://labmcp.example.com"))
+        create_auth_provider(
+            Settings(mcp_auth_mode="oidc_proxy", mcp_auth_base_url="https://labmcp.example.com")
+        )
 
     with pytest.raises(RuntimeError, match="MCP_AUTH_OIDC_CLIENT_ID"):
         create_auth_provider(
@@ -235,9 +237,9 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         "jwt_signing_key": "signing-key",
     }
 
-    assert provider._build_upstream_authorize_url(
-        "transaction", {"scopes": ["openid", "profile"]}
-    )["scopes"] == ["openid", "profile", "offline_access"]
+    assert provider._build_upstream_authorize_url("transaction", {"scopes": ["openid", "profile"]})[
+        "scopes"
+    ] == ["openid", "profile", "offline_access"]
     assert provider.advertised_scopes == ["openid", "profile", "offline_access"]
 
 
@@ -275,7 +277,9 @@ def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyP
 
 
 @pytest.mark.asyncio
-async def test_oidc_proxy_extracts_group_claim_from_access_token(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_oidc_proxy_extracts_group_claim_from_access_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
             pass

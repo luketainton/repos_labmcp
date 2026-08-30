@@ -55,20 +55,37 @@ def test_parse_operations_rejects_invalid_or_duplicate_documents() -> None:
         parse_operations({})
 
     with pytest.raises(ValueError, match="Duplicate"):
-        parse_operations({"paths": {"/one": {"get": {"operationId": "same"}}, "/two": {"post": {"operationId": "same"}}}})
+        parse_operations(
+            {
+                "paths": {
+                    "/one": {"get": {"operationId": "same"}},
+                    "/two": {"post": {"operationId": "same"}},
+                }
+            }
+        )
 
     with pytest.raises(ValueError, match="no supported operations"):
-        parse_operations({"paths": {"/archive": {"get": {"operationId": "archive", "produces": ["application/zip"]}}}})
+        parse_operations(
+            {
+                "paths": {
+                    "/archive": {"get": {"operationId": "archive", "produces": ["application/zip"]}}
+                }
+            }
+        )
 
 
 def test_parse_operations_ignores_invalid_routes_and_methods() -> None:
-    operations = parse_operations({"paths": {
-        1: {"get": {"operationId": "ignored"}},
-        "/not-a-map": None,
-        "/unsupported": {"head": {"operationId": "ignored"}},
-        "/missing-id": {"get": {}},
-        "/valid": {"get": {"operationId": "valid"}},
-    }})
+    operations = parse_operations(
+        {
+            "paths": {
+                1: {"get": {"operationId": "ignored"}},
+                "/not-a-map": None,
+                "/unsupported": {"head": {"operationId": "ignored"}},
+                "/missing-id": {"get": {}},
+                "/valid": {"get": {"operationId": "valid"}},
+            }
+        }
+    )
 
     assert set(operations) == {"valid"}
 
@@ -117,9 +134,13 @@ async def test_call_operation_rejects_an_unknown_operation(monkeypatch: pytest.M
 
 
 @pytest.mark.asyncio
-async def test_call_operation_rejects_invalid_request_shapes(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_call_operation_rejects_invalid_request_shapes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = FakeClient()
-    operations = parse_operations({"paths": {"/repos/{owner}": {"post": {"operationId": "update"}}}})
+    operations = parse_operations(
+        {"paths": {"/repos/{owner}": {"post": {"operationId": "update"}}}}
+    )
 
     async def get_operations(_client):
         return operations
@@ -133,9 +154,22 @@ async def test_call_operation_rejects_invalid_request_shapes(monkeypatch: pytest
 
 
 @pytest.mark.asyncio
-async def test_call_operation_requires_form_data_for_form_operations(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_call_operation_requires_form_data_for_form_operations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = FakeClient()
-    operations = parse_operations({"paths": {"/repos": {"post": {"operationId": "create", "parameters": [{"in": "formData", "name": "title", "type": "string"}]}}}})
+    operations = parse_operations(
+        {
+            "paths": {
+                "/repos": {
+                    "post": {
+                        "operationId": "create",
+                        "parameters": [{"in": "formData", "name": "title", "type": "string"}],
+                    }
+                }
+            }
+        }
+    )
 
     async def get_operations(_client):
         return operations
@@ -147,7 +181,9 @@ async def test_call_operation_requires_form_data_for_form_operations(monkeypatch
 
 
 @pytest.mark.asyncio
-async def test_get_operations_parses_and_caches_swagger_specification(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_get_operations_parses_and_caches_swagger_specification(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = FakeClient()
     client.base_url = "https://gitea-cache.example"
     document = {"paths": {"/user/repos": {"get": {"operationId": "listRepos"}}}}
@@ -165,7 +201,9 @@ async def test_get_operations_parses_and_caches_swagger_specification(monkeypatc
 
 
 @pytest.mark.asyncio
-async def test_get_operations_refreshes_and_rejects_non_json_responses(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_get_operations_refreshes_and_rejects_non_json_responses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = FakeClient()
     client.base_url = "https://gitea-refresh.example"
     document = {"paths": {"/user/repos": {"get": {"operationId": "listRepos"}}}}

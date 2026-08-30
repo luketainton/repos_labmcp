@@ -30,20 +30,28 @@ OPERATIONS: dict[str, Action1Operation] = {
     "update_endpoint": Action1Operation("PATCH", "/endpoints/managed/{orgId}/{endpointId}"),
     "delete_endpoint": Action1Operation("DELETE", "/endpoints/managed/{orgId}/{endpointId}"),
     "move_endpoint": Action1Operation("POST", "/endpoints/managed/{orgId}/{endpointId}/move"),
-    "endpoint_missing_updates": Action1Operation("GET", "/endpoints/managed/{orgId}/{endpointId}/missing-updates"),
+    "endpoint_missing_updates": Action1Operation(
+        "GET", "/endpoints/managed/{orgId}/{endpointId}/missing-updates"
+    ),
     "list_endpoint_groups": Action1Operation("GET", "/endpoints/groups/{orgId}"),
     "create_endpoint_group": Action1Operation("POST", "/endpoints/groups/{orgId}"),
     "get_endpoint_group": Action1Operation("GET", "/endpoints/groups/{orgId}/{groupId}"),
     "update_endpoint_group": Action1Operation("PATCH", "/endpoints/groups/{orgId}/{groupId}"),
     "delete_endpoint_group": Action1Operation("DELETE", "/endpoints/groups/{orgId}/{groupId}"),
-    "list_endpoint_group_contents": Action1Operation("GET", "/endpoints/groups/{orgId}/{groupId}/contents"),
-    "update_endpoint_group_contents": Action1Operation("POST", "/endpoints/groups/{orgId}/{groupId}/contents"),
+    "list_endpoint_group_contents": Action1Operation(
+        "GET", "/endpoints/groups/{orgId}/{groupId}/contents"
+    ),
+    "update_endpoint_group_contents": Action1Operation(
+        "POST", "/endpoints/groups/{orgId}/{groupId}/contents"
+    ),
     "list_reports": Action1Operation("GET", "/reports/all"),
     "get_report": Action1Operation("GET", "/reports/all/{reportOrCategoryId}"),
     "get_report_data": Action1Operation("GET", "/reportdata/{orgId}/{reportId}/data"),
     "list_vulnerabilities": Action1Operation("GET", "/vulnerabilities/{orgId}"),
     "list_automation_schedules": Action1Operation("GET", "/automations/schedules/{orgId}"),
-    "get_automation_schedule": Action1Operation("GET", "/automations/schedules/{orgId}/{automationId}"),
+    "get_automation_schedule": Action1Operation(
+        "GET", "/automations/schedules/{orgId}/{automationId}"
+    ),
     "apply_automation": Action1Operation("POST", "/automations/instances/{orgId}"),
     "list_scripts": Action1Operation("GET", "/scripts/all"),
     "get_script": Action1Operation("GET", "/scripts/all/{scriptId}"),

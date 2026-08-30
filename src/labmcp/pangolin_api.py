@@ -23,7 +23,9 @@ class PangolinOperation:
     encoding: str
 
 
-def parse_operations(specification: Mapping[str, Any], api_path: str = "/v1") -> dict[str, PangolinOperation]:
+def parse_operations(
+    specification: Mapping[str, Any], api_path: str = "/v1"
+) -> dict[str, PangolinOperation]:
     """Parse Pangolin's OpenAPI 3 document into safe, callable operation metadata."""
     paths = specification.get("paths")
     if not isinstance(paths, Mapping):
@@ -87,7 +89,9 @@ async def call_operation(
 class PangolinOperationProvider(Provider):
     """Expose one MCP tool for every supported operation in Pangolin's live spec."""
 
-    def __init__(self, client_factory: ServiceClientFactory, api_path: str = "/v1", auth: Any = None) -> None:
+    def __init__(
+        self, client_factory: ServiceClientFactory, api_path: str = "/v1", auth: Any = None
+    ) -> None:
         super().__init__()
         self._client_factory = client_factory
         self._api_path = api_path
