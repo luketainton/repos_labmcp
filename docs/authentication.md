@@ -1,0 +1,85 @@
+# MCP client authentication
+
+The server allows unauthenticated stdio because the MCP client starts a local process. Network transports are different: `MCP_TRANSPORT=http`, `sse`, or `streamable-http` require `MCP_AUTH_MODE=jwt` or `oidc_proxy`.
+
+### Pocket ID metadata-document clients (recommended)
+
+To use Pocket ID's **Metadata document clients** (CIMD), run LabMCP as a JWT-verifying OAuth protected resource. This is the same model as Pocket ID's [MCP OAuth demo](https://github.com/pocket-id/mcp-oauth-demo): MCP clients authenticate directly with Pocket ID using their metadata documents, and LabMCP validates the resulting access tokens. No OIDC client, client secret, or LabMCP callback is required.
+
+Configure LabMCP with its public URL. For the `http` transport, the legacy full catalogue is at `/mcp`; each application path is also an independent OAuth resource:
+
+```sh
+MCP_TRANSPORT=http
+MCP_AUTH_MODE=jwt
+MCP_AUTH_BASE_URL=https://labmcp.example.com
+MCP_AUTH_JWT_AUDIENCE=https://labmcp.example.com/mcp
+MCP_AUTH_REQUIRED_SCOPES=groups
+```
+
+At runtime LabMCP derives the audience for each mounted path from `MCP_AUTH_BASE_URL`, for example `https://labmcp.example.com/gitea/`. Register each path you intend to expose as a Pocket ID API resource. `MCP_AUTH_JWT_AUDIENCE` remains useful for the legacy configuration and stdio, but mounted network paths deliberately use their exact path audience.
+
+`MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to the issuer's `/.well-known/jwks.json` endpoint. LabMCP publishes OAuth protected-resource metadata that directs clients to Pocket ID; it verifies the token signature, issuer, audience, expiry, scopes, and subject before allowing a request.
+
+In Pocket ID, create an API whose **API resource** is exactly `https://labmcp.example.com/mcp`, configure the permissions/scopes LabMCP requires, then enable **Metadata document clients** for that API. Allow only the client metadata URLs you trust through Pocket ID’s `CIMD_URL_ALLOWLIST` (the Pocket ID demo pre-allows the Claude Code and Claude Desktop metadata URLs). Do not create a separate OIDC client for this flow.
+
+### OIDC proxy clients
+
+Use `oidc_proxy` only when LabMCP itself should act as an OAuth client to Pocket ID. Create an OIDC client in Pocket ID for LabMCP and add a callback URL for every path clients will use (for example, `https://labmcp.example.com/gitea/auth/callback`), then configure:
+
+```sh
+MCP_TRANSPORT=sse
+MCP_AUTH_MODE=oidc_proxy
+MCP_AUTH_BASE_URL=https://labmcp.example.com
+MCP_AUTH_OIDC_CLIENT_ID=<pocket-id-client-id>
+MCP_AUTH_OIDC_CLIENT_SECRET=<pocket-id-client-secret>
+MCP_AUTH_OIDC_EXTRA_SCOPES=offline_access
+MCP_AUTH_OIDC_JWT_SIGNING_KEY=<stable-random-secret>
+MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
+```
+
+By default, `MCP_AUTH_OIDC_CONFIG_URL` is derived as `<POCKET_ID_URL>/.well-known/openid-configuration`, and the callback path is `/auth/callback`. Set them explicitly if your Pocket ID issuer or reverse proxy path differs from `POCKET_ID_URL`.
+
+Pocket ID rejects the OAuth `resource` indicator used by some MCP clients. The server therefore defaults `MCP_AUTH_OIDC_FORWARD_RESOURCE=false`; leave it unchanged for Pocket ID.
+
+`MCP_AUTH_OIDC_ENABLE_CIMD=true` (the default) enables metadata-document clients connecting to LabMCP's proxy. It does not remove the proxy's own upstream OIDC client registration; use the JWT mode above when Pocket ID should authenticate metadata-document clients directly.
+
+When using `oidc_proxy`, `MCP_AUTH_OIDC_EXTRA_SCOPES` defaults to `offline_access`. FastMCP stores and rotates the upstream refresh token, then issues an MCP refresh token to clients. The configured Pocket ID OAuth client must permit the `offline_access` scope. Set the variable to an empty value to disable the extra scope, or provide a comma-separated list of provider-specific extra scopes.
+
+After login, MCP clients authenticate with bearer tokens:
+
+```http
+Authorization: Bearer <mcp-issued-token>
+```
+
+Use `jwt` mode when Pocket ID is the authorization server for the MCP resource, including metadata-document clients:
+
+```sh
+MCP_AUTH_MODE=jwt
+MCP_AUTH_BASE_URL=https://labmcp.example.com
+MCP_AUTH_JWT_AUDIENCE=https://labmcp.example.com/mcp
+```
+
+In `jwt` mode, `MCP_AUTH_JWT_ISSUER` defaults to `POCKET_ID_URL`, and `MCP_AUTH_JWT_JWKS_URI` defaults to `<issuer>/.well-known/jwks.json`. `MCP_AUTH_JWT_AUDIENCE` must be the API resource URL, not an OIDC client ID. If you configure `MCP_AUTH_REQUIRED_SCOPES`, provide a comma-separated list of scopes that must be present in the token.
+
+### Service access by Pocket ID group, role, or scope
+
+Tools can be made visible only to users in specific Pocket ID groups. Request Pocket ID's `groups` scope and map each service to one or more permitted groups:
+
+```sh
+MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
+MCP_AUTH_GROUP_CLAIM=groups
+MCP_SERVICE_GROUPS={"gitea":["mcp-gitea"],"pocket_id":["mcp-pocket-id"],"meraki":["mcp-meraki"],"pangolin":["mcp-pangolin"],"shlink":["mcp-shlink"]}
+```
+
+Membership of any group listed for a service permits access to that service's tools. The Gitea tools use the `gitea` service key; Pocket ID tools use `pocket_id`; Meraki tools use `meraki`; Pangolin tools use `pangolin`; and Shlink tools use `shlink`. Once `MCP_SERVICE_GROUPS` is non-empty, any omitted service is denied. Leave it as `{}` only when every authenticated user should have access to all services.
+
+Pocket ID normally provides groups in the `groups` claim. To authorize from a custom role claim instead, configure that custom claim on the relevant Pocket ID groups, set `MCP_AUTH_GROUP_CLAIM` to its name, and use its values in `MCP_SERVICE_GROUPS`.
+
+Alternatively, authorize each service from API permissions (OAuth scopes), without requesting a groups claim:
+
+```sh
+MCP_AUTH_REQUIRED_SCOPES=labmcp:connect
+MCP_SERVICE_SCOPES={"gitea":["labmcp:gitea"],"pocket_id":["labmcp:pocket-id"],"n8n":["labmcp:n8n"],"meraki":["labmcp:meraki"],"pangolin":["labmcp:pangolin"],"shlink":["labmcp:shlink"],"action1":["labmcp:action1"]}
+```
+
+Create the matching permissions on the LabMCP API in Pocket ID and grant them to metadata-document clients. A token needs `labmcp:connect` to authenticate and at least one listed scope to use a mapped service. `MCP_SERVICE_GROUPS` and `MCP_SERVICE_SCOPES` are alternatives: a matching group **or** scope permits access. When either mapping is non-empty, a service omitted from both mappings is denied.
