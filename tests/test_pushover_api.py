@@ -27,10 +27,10 @@ async def test_send_notification_uses_only_non_empty_optional_values() -> None:
         {"message": "Backup complete", "title": "Lab", "html": 1, "priority": 1}
     ]
     assert tool.annotations.model_dump(exclude_none=True) == {
-        "readOnlyHint": False,
-        "destructiveHint": False,
-        "idempotentHint": False,
-        "openWorldHint": True,
+        "read_only_hint": False,
+        "destructive_hint": False,
+        "idempotent_hint": False,
+        "open_world_hint": True,
     }
 
 

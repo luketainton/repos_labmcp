@@ -30,18 +30,18 @@ async def test_static_tools_expose_mcp_behavior_annotations() -> None:
 
     assert version_tool is not None
     assert version_tool.annotations.model_dump(exclude_none=True) == {
-        "readOnlyHint": True,
-        "openWorldHint": False,
+        "read_only_hint": True,
+        "open_world_hint": False,
     }
     assert list_repositories_tool is not None
     assert list_repositories_tool.annotations.model_dump(exclude_none=True) == {
-        "readOnlyHint": True,
-        "openWorldHint": True,
+        "read_only_hint": True,
+        "open_world_hint": True,
     }
     assert create_issue_tool is not None
     assert create_issue_tool.annotations.model_dump(exclude_none=True) == {
-        "readOnlyHint": False,
-        "openWorldHint": True,
+        "read_only_hint": False,
+        "open_world_hint": True,
     }
 
 

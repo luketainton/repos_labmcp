@@ -13,20 +13,20 @@ from labmcp.tool_annotations import api_operation_annotations
 @pytest.mark.parametrize(
     ("method", "expected"),
     [
-        ("GET", {"readOnlyHint": True, "openWorldHint": True}),
-        ("POST", {"readOnlyHint": False, "openWorldHint": True}),
-        ("PATCH", {"readOnlyHint": False, "openWorldHint": True}),
+        ("GET", {"read_only_hint": True, "open_world_hint": True}),
+        ("POST", {"read_only_hint": False, "open_world_hint": True}),
+        ("PATCH", {"read_only_hint": False, "open_world_hint": True}),
         (
             "PUT",
-            {"readOnlyHint": False, "idempotentHint": True, "openWorldHint": True},
+            {"read_only_hint": False, "idempotent_hint": True, "open_world_hint": True},
         ),
         (
             "DELETE",
             {
-                "readOnlyHint": False,
-                "destructiveHint": True,
-                "idempotentHint": True,
-                "openWorldHint": True,
+                "read_only_hint": False,
+                "destructive_hint": True,
+                "idempotent_hint": True,
+                "open_world_hint": True,
             },
         ),
     ],
@@ -72,7 +72,7 @@ async def test_all_operation_providers_attach_http_annotations() -> None:
     action1 = Action1OperationProvider(client_factory)
 
     assert all(
-        tool.annotations.readOnlyHint is True and tool.annotations.openWorldHint is True
+        tool.annotations.read_only_hint is True and tool.annotations.open_world_hint is True
         for tool in (gitea, n8n, meraki, pocket_id, pangolin, shlink)
     )
-    assert all(tool.annotations.openWorldHint is True for tool in await action1.list_tools())
+    assert all(tool.annotations.open_world_hint is True for tool in await action1.list_tools())
