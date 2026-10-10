@@ -117,6 +117,16 @@ def pangolin_client(settings: Settings) -> ServiceClient:
     return ServiceClient(settings.pangolin_url, token, settings.http_timeout)
 
 
+def freeitsm_client(settings: Settings) -> ServiceClient:
+    """Create a bearer-token client for FreeITSM's REST API."""
+    if not settings.freeitsm_url:
+        raise RuntimeError("FreeITSM is not configured. Set FREEITSM_URL.")
+    if not settings.freeitsm_api_key:
+        raise RuntimeError("FreeITSM is not configured. Set FREEITSM_API_KEY.")
+    token = settings.freeitsm_api_key.get_secret_value()
+    return ServiceClient(settings.freeitsm_url, token, settings.http_timeout)
+
+
 def shlink_client(settings: Settings) -> ServiceClient:
     """Create a client for Shlink's API-key authenticated REST API."""
     token = settings.shlink_api_key.get_secret_value() if settings.shlink_api_key else None

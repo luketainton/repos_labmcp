@@ -1,6 +1,6 @@
 # labmcp
 
-Unified [Model Context Protocol](https://modelcontextprotocol.io/) server for a home lab, bringing Gitea, Pocket ID, n8n, Meraki, Pangolin, Shlink, Pushover, and Action1 tools together in one FastMCP process.
+Unified [Model Context Protocol](https://modelcontextprotocol.io/) server for a home lab, bringing Gitea, Pocket ID, n8n, Meraki, Pangolin, FreeITSM, Shlink, Pushover, and Action1 tools together in one FastMCP process.
 
 ## Quick start
 

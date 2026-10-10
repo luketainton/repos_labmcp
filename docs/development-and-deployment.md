@@ -10,7 +10,7 @@ uv sync --dev
 uv run labmcp
 ```
 
-The default transport is stdio, which works with MCP clients that launch local servers. For a network endpoint, set `MCP_TRANSPORT=http`, then configure `MCP_HOST` and `MCP_PORT`. One network process exposes the legacy full catalogue at `/mcp` and smaller per-application catalogues at `/gitea`, `/pocketid`, `/n8n`, `/meraki`, `/pangolin`, `/shlink`, `/action1`, and `/pushover`. Connect ChatGPT or Codex to the application path you need.
+The default transport is stdio, which works with MCP clients that launch local servers. For a network endpoint, set `MCP_TRANSPORT=http`, then configure `MCP_HOST` and `MCP_PORT`. One network process exposes the legacy full catalogue at `/mcp` and smaller per-application catalogues at `/gitea`, `/pocketid`, `/n8n`, `/meraki`, `/pangolin`, `/freeitsm`, `/shlink`, `/action1`, and `/pushover`. Connect ChatGPT or Codex to the application path you need.
 
 Gitea tokens and Pocket ID API keys should be supplied through secrets or environment variables, never committed to the repository. Pocket ID's API key can be created under `/settings/admin/api-keys`.
 
@@ -28,6 +28,7 @@ docker run --rm -i \
   -e N8N_URL -e N8N_API_KEY \
   -e MERAKI_URL -e MERAKI_DASHBOARD_API_KEY \
   -e PANGOLIN_URL -e PANGOLIN_API_KEY \
+  -e FREEITSM_URL -e FREEITSM_API_PATH -e FREEITSM_API_KEY \
   -e SHLINK_URL -e SHLINK_API_KEY \
   -e PUSHOVER_APP_TOKEN -e PUSHOVER_USER_KEY \
   -e ACTION1_URL -e ACTION1_CLIENT_ID -e ACTION1_CLIENT_SECRET \

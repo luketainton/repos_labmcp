@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     pangolin_url: str | None = None
     pangolin_api_key: SecretStr | None = None
     pangolin_api_path: str = "/v1"
+    freeitsm_url: str | None = None
+    freeitsm_api_key: SecretStr | None = None
+    freeitsm_api_path: str = "/api/v1"
     shlink_url: str | None = None
     shlink_api_key: SecretStr | None = None
     shlink_api_version: str = "3"

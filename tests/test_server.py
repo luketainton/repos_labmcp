@@ -59,6 +59,31 @@ async def test_service_catalogues_only_expose_their_own_tools() -> None:
     assert await pocket_id.get_tool("gitea_list_repositories") is None
 
 
+@pytest.mark.asyncio
+async def test_freeitsm_tools_are_available_on_the_dedicated_and_aggregate_catalogues(
+    monkeypatch,
+) -> None:
+    async def get_operations(_client, _api_path):
+        from labmcp.freeitsm_api import FreeITSMOperation
+
+        return {"get_ping": FreeITSMOperation("GET", "/api/v1/ping", "none")}
+
+    monkeypatch.setattr("labmcp.freeitsm_api._get_operations", get_operations)
+    settings = Settings(
+        mcp_transport="http",
+        mcp_auth_mode="none",
+        freeitsm_url="https://itsm.example",
+        freeitsm_api_key="fitsm_test_key",
+    )
+    monkeypatch.setattr(server, "get_settings", lambda: settings)
+    freeitsm = server.create_mcp(settings, "freeitsm")
+    aggregate = server.create_mcp(settings)
+
+    assert await freeitsm.get_tool("freeitsm_get_ping") is not None
+    assert await freeitsm.get_tool("gitea_list_repositories") is None
+    assert await aggregate.get_tool("freeitsm_get_ping") is not None
+
+
 def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> None:
     settings = Settings(
         mcp_transport="http",
@@ -74,6 +99,7 @@ def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> No
         "/n8n",
         "/meraki",
         "/pangolin",
+        "/freeitsm",
         "/shlink",
         "/action1",
         "/pushover",

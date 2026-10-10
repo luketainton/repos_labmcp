@@ -17,6 +17,7 @@ from .auth import (
 from .authorization import require_service_access
 from .clients import (
     action1_client,
+    freeitsm_client,
     gitea_client,
     meraki_client,
     n8n_client,
@@ -26,6 +27,7 @@ from .clients import (
 )
 from .config import Settings, get_settings
 from .gitea_api import GiteaOperationProvider
+from .freeitsm_api import FreeITSMOperationProvider
 from .meraki_api import MerakiOperationProvider
 from .n8n_api import N8NOperationProvider
 from .pangolin_api import PangolinOperationProvider
@@ -44,6 +46,7 @@ SERVICE_PATHS = {
     "n8n": "n8n",
     "meraki": "meraki",
     "pangolin": "pangolin",
+    "freeitsm": "freeitsm",
     "shlink": "shlink",
     "action1": "action1",
     "pushover": "pushover",
@@ -105,6 +108,14 @@ def _providers_for(service: str, settings: Settings) -> list[Any]:
             PangolinOperationProvider(
                 lambda: pangolin_client(get_settings()),
                 api_path=settings.pangolin_api_path,
+                auth=_service_auth(service, settings),
+            )
+        ]
+    if service == "freeitsm":
+        return [
+            FreeITSMOperationProvider(
+                lambda: freeitsm_client(get_settings()),
+                api_path=settings.freeitsm_api_path,
                 auth=_service_auth(service, settings),
             )
         ]

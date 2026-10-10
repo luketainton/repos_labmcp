@@ -41,6 +41,12 @@ Action1:
 
 - individually discoverable `action1_*` tools for endpoint inventory and groups, patching, reports, vulnerabilities, automations, and scripts.
 
+FreeITSM:
+
+- one individually discoverable `freeitsm_*` tool for each supported JSON operation in the FreeITSM OpenAPI document, including tickets, assets, problems, changes, knowledge, tasks, CMDB, contracts, suppliers, domains, projects, calendar, software, workflows, and reference data.
+
+Configure `FREEITSM_URL` as the FreeITSM origin (default example: `https://itsm.tainton.uk`), `FREEITSM_API_PATH` (default: `/api/v1`), and `FREEITSM_API_KEY` with an API key created in FreeITSM. The key is sent server-side as `Authorization: Bearer ...`. The API key's permissions and company scope are enforced by FreeITSM. FreeITSM publishes its OpenAPI document at `<FREEITSM_URL><FREEITSM_API_PATH>/openapi.json`; LabMCP loads and caches the operation catalogue during tool discovery. Operations accept `path_params`, `query`, and JSON `body` arguments. The published document currently contains 246 JSON operations and no binary or form uploads.
+
 Action1 tools authenticate with API credentials. Configure both `ACTION1_CLIENT_ID` and `ACTION1_CLIENT_SECRET`; LabMCP posts them as form data to `/oauth2/token`, caches the returned bearer token until shortly before expiry, and uses it for API calls. Set `ACTION1_URL` to the matching regional endpoint; it defaults to `https://app.action1.com/api/3.0`.
 
 Pocket ID API requests use the documented `X-API-KEY` header. OIDC discovery and health checks do not require a key. Each supported JSON/form endpoint is exposed as its own tool, including user, group, OIDC client, API key, custom claim, SCIM, and administrative operations. Binary image upload/download endpoints are excluded because they need an MCP attachment interface.

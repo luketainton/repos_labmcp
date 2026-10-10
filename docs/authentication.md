@@ -68,10 +68,10 @@ Tools can be made visible only to users in specific Pocket ID groups. Request Po
 ```sh
 MCP_AUTH_REQUIRED_SCOPES=openid,profile,groups
 MCP_AUTH_GROUP_CLAIM=groups
-MCP_SERVICE_GROUPS={"gitea":["mcp-gitea"],"pocket_id":["mcp-pocket-id"],"meraki":["mcp-meraki"],"pangolin":["mcp-pangolin"],"shlink":["mcp-shlink"]}
+MCP_SERVICE_GROUPS={"gitea":["mcp-gitea"],"pocket_id":["mcp-pocket-id"],"meraki":["mcp-meraki"],"pangolin":["mcp-pangolin"],"freeitsm":["mcp-freeitsm"],"shlink":["mcp-shlink"]}
 ```
 
-Membership of any group listed for a service permits access to that service's tools. The Gitea tools use the `gitea` service key; Pocket ID tools use `pocket_id`; Meraki tools use `meraki`; Pangolin tools use `pangolin`; and Shlink tools use `shlink`. Once `MCP_SERVICE_GROUPS` is non-empty, any omitted service is denied. Leave it as `{}` only when every authenticated user should have access to all services.
+Membership of any group listed for a service permits access to that service's tools. The Gitea tools use the `gitea` service key; Pocket ID tools use `pocket_id`; Meraki tools use `meraki`; Pangolin tools use `pangolin`; FreeITSM tools use `freeitsm`; and Shlink tools use `shlink`. Once `MCP_SERVICE_GROUPS` is non-empty, any omitted service is denied. Leave it as `{}` only when every authenticated user should have access to all services.
 
 Pocket ID normally provides groups in the `groups` claim. To authorize from a custom role claim instead, configure that custom claim on the relevant Pocket ID groups, set `MCP_AUTH_GROUP_CLAIM` to its name, and use its values in `MCP_SERVICE_GROUPS`.
 
@@ -79,7 +79,7 @@ Alternatively, authorize each service from API permissions (OAuth scopes), witho
 
 ```sh
 MCP_AUTH_REQUIRED_SCOPES=labmcp:connect
-MCP_SERVICE_SCOPES={"gitea":["labmcp:gitea"],"pocket_id":["labmcp:pocket-id"],"n8n":["labmcp:n8n"],"meraki":["labmcp:meraki"],"pangolin":["labmcp:pangolin"],"shlink":["labmcp:shlink"],"action1":["labmcp:action1"]}
+MCP_SERVICE_SCOPES={"gitea":["labmcp:gitea"],"pocket_id":["labmcp:pocket-id"],"n8n":["labmcp:n8n"],"meraki":["labmcp:meraki"],"pangolin":["labmcp:pangolin"],"freeitsm":["labmcp:freeitsm"],"shlink":["labmcp:shlink"],"action1":["labmcp:action1"]}
 ```
 
 Create the matching permissions on the LabMCP API in Pocket ID and grant them to metadata-document clients. A token needs `labmcp:connect` to authenticate and at least one listed scope to use a mapped service. `MCP_SERVICE_GROUPS` and `MCP_SERVICE_SCOPES` are alternatives: a matching group **or** scope permits access. When either mapping is non-empty, a service omitted from both mappings is denied.
