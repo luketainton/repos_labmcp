@@ -2,7 +2,7 @@
   "assignAutomerge": false,
   "assigneesFromCodeOwners": false,
   "dependencyDashboardAutoclose": true,
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "group:all"],
   "ignorePaths": ["**/.archive/**"],
   "labels": ["type/dependencies"],
   "platformCommit": "enabled",
@@ -15,6 +15,8 @@
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
   "vulnerabilityAlerts": {
+    "groupName": "all dependencies",
+    "groupSlug": "all",
     "commitMessagePrefix": "[SECURITY] ",
     "enabled": true,
     "labels": ["security"],
