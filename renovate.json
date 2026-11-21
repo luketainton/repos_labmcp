@@ -34,6 +34,12 @@
     {
       "matchDepTypes": ["devDependencies"],
       "automerge": true
+    },
+    {
+      "matchDatasources": ["docker", "python-version"],
+      "matchPackageNames": ["python", "library/python", "docker.io/library/python"],
+      "groupName": "Python version",
+      "groupSlug": "python-version"
     }
   ]
 }
