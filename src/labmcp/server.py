@@ -6,7 +6,8 @@ from typing import Any
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from starlette.applications import Starlette
-from starlette.routing import Mount
+from starlette.responses import PlainTextResponse
+from starlette.routing import Mount, Route
 
 from .action1_api import Action1OperationProvider
 from .auth import (
@@ -206,9 +207,11 @@ def create_network_app(settings: Settings) -> Starlette:
                 await stack.enter_async_context(app.lifespan(app))
             yield
 
-    return Starlette(
-        routes=[Mount(f"/{path}", app=app) for path, app in http_apps], lifespan=lifespan
-    )
+    async def health(_request):
+        return PlainTextResponse("ok")
+
+    routes = [Mount(f"/{path}", app=app) for path, app in http_apps]
+    return Starlette(routes=[*routes, Route("/healthz", health)], lifespan=lifespan)
 
 
 async def gitea_list_repositories(
@@ -278,7 +281,7 @@ def main() -> None:
     settings = get_settings()
     ensure_network_transport_is_authenticated(settings)
     if settings.mcp_transport not in NETWORK_TRANSPORTS:
-        mcp.run(transport=settings.mcp_transport, host=settings.mcp_host, port=settings.mcp_port)
+        mcp.run(transport=settings.mcp_transport)
         return
     import uvicorn
 

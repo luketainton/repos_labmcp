@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
+from starlette.testclient import TestClient
 
 from labmcp import server
 from labmcp.config import Settings
@@ -103,6 +104,7 @@ def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> No
         "/shlink",
         "/action1",
         "/pushover",
+        "/healthz",
     ]
     jwt_settings = Settings(
         mcp_transport="http",
@@ -112,6 +114,22 @@ def test_network_app_mounts_legacy_and_service_paths_with_path_audiences() -> No
     gitea_settings = server._path_settings(jwt_settings, "gitea")
     assert gitea_settings.mcp_auth_base_url == "https://mcp.example.com/gitea/"
     assert gitea_settings.mcp_auth_jwt_audience == "https://mcp.example.com/gitea/"
+
+
+def test_health_endpoint_responds_without_credentials_in_jwt_mode() -> None:
+    settings = Settings(
+        mcp_transport="http",
+        mcp_auth_mode="jwt",
+        mcp_auth_base_url="https://mcp.example.com",
+        mcp_auth_jwt_audience="https://mcp.example.com/mcp",
+        mcp_auth_jwt_issuer="https://id.example.com",
+        mcp_auth_jwt_jwks_uri="https://id.example.com/.well-known/jwks.json",
+    )
+    with TestClient(server.create_network_app(settings)) as client:
+        response = client.get("/healthz")
+        assert response.status_code == 200
+        assert response.text == "ok"
+        assert client.get("/mcp/").status_code == 401
 
 
 def test_path_settings_preserves_oidc_proxy_upstream_audience() -> None:
@@ -211,4 +229,4 @@ def test_main_validates_transport_then_runs_server(monkeypatch):
 
     server.main()
 
-    assert calls == [settings, {"transport": "stdio", "host": "127.0.0.1", "port": 8765}]
+    assert calls == [settings, {"transport": "stdio"}]

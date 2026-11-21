@@ -39,11 +39,15 @@ docker run --rm -i \
 
 For HTTP transport, also pass `-e MCP_TRANSPORT=http -e MCP_HOST=0.0.0.0 -p 8000:8000`.
 
+The container checks `/healthz` on the configured host and port for network transports. For stdio, it checks that the LabMCP process is running. The health check does not call upstream services.
+
 When using `MCP_AUTH_MODE=oidc_proxy`, mount a persistent volume at
 `/home/labmcp/.local/share`. FastMCP stores OAuth client-registration state there;
 without it, clients may need to register again after the container is recreated.
 
 ## Releases
+
+After the image is published, the release workflow runs Unified Python CI and records the tag in Qualor with its dependency list for vulnerability monitoring.
 
 Pushing a tag such as `v0.1.0` starts `.gitea/workflows/release.yml`. The workflow builds and pushes both `${PACKAGES_REGISTRY_URL}/owner/labmcp:v0.1.0` and `:latest`; configure `PACKAGES_REGISTRY_URL` and `ACTIONS_USERNAME` as variables plus `ACTIONS_TOKEN` as a secret.
 

@@ -20,4 +20,5 @@ ENV HOME=/home/labmcp \
 RUN mkdir -p "$XDG_DATA_HOME" && chown -R 10001:10001 /home/labmcp
 
 USER 10001:10001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s CMD ["python", "-m", "labmcp.healthcheck"]
 ENTRYPOINT ["labmcp"]
