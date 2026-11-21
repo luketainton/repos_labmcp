@@ -12,6 +12,8 @@ uv run labmcp
 
 The default transport is stdio, which works with MCP clients that launch local servers. For a network endpoint, set `MCP_TRANSPORT=http`, then configure `MCP_HOST` and `MCP_PORT`. One network process exposes the legacy full catalogue at `/mcp` and smaller per-application catalogues at `/gitea`, `/pocketid`, `/n8n`, `/meraki`, `/pangolin`, `/freeitsm`, `/shlink`, `/action1`, and `/pushover`. Connect ChatGPT or Codex to the application path you need.
 
+Network transports listen on `127.0.0.1` by default. Set `MCP_HOST` to the intended interface address or use `MCP_HOST=0.0.0.0` to listen on all IPv4 interfaces.
+
 Gitea tokens and Pocket ID API keys should be supplied through secrets or environment variables, never committed to the repository. Pocket ID's API key can be created under `/settings/admin/api-keys`.
 
 ## CI and code quality
@@ -35,7 +37,7 @@ docker run --rm -i \
   labmcp:local
 ```
 
-For HTTP transport, also pass `-e MCP_TRANSPORT=http -p 8000:8000`.
+For HTTP transport, also pass `-e MCP_TRANSPORT=http -e MCP_HOST=0.0.0.0 -p 8000:8000`.
 
 When using `MCP_AUTH_MODE=oidc_proxy`, mount a persistent volume at
 `/home/labmcp/.local/share`. FastMCP stores OAuth client-registration state there;

@@ -27,3 +27,7 @@ jobs:
       python-version: '3.14'
       docker-enabled: true
       security-scan: true
+      qualor-enabled: true
+      qualor-onepassword-key: QUALOR_TOKEN
+    secrets:
+      ONEPASSWORD_SERVICE_ACCOUNT_TOKEN: ${{ secrets.ONEPASSWORD_SERVICE_ACCOUNT_TOKEN }}

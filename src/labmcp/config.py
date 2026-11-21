@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     action1_client_secret: SecretStr | None = None
     http_timeout: float = 20.0
     mcp_transport: str = "stdio"
-    mcp_host: str = "0.0.0.0"
+    mcp_host: str = "127.0.0.1"
     mcp_port: int = 8000
     mcp_auth_mode: Literal["none", "jwt", "oidc_proxy"] = "none"
     mcp_auth_base_url: str | None = None

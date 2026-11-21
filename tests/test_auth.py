@@ -1,5 +1,8 @@
+import base64
+import json
 import sys
 import types
+from secrets import token_urlsafe
 from types import SimpleNamespace
 
 import pytest
@@ -10,6 +13,16 @@ from labmcp.auth import (
     ensure_network_transport_is_authenticated,
 )
 from labmcp.config import Settings
+
+
+@pytest.fixture
+def oidc_client_secret() -> str:
+    return token_urlsafe(16)
+
+
+def jwt_with_claims(claims: dict[str, list[str]]) -> str:
+    payload = base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip("=")
+    return f"e30.{payload}."
 
 
 def test_stdio_allows_no_auth() -> None:
@@ -163,12 +176,12 @@ def test_jwt_auth_advertises_service_scopes(monkeypatch: pytest.MonkeyPatch) -> 
     ]
 
 
-def test_oidc_proxy_requires_public_base_url() -> None:
+def test_oidc_proxy_requires_public_base_url(oidc_client_secret: str) -> None:
     settings = Settings(
         pocket_id_url="https://id.example.com",
         mcp_auth_mode="oidc_proxy",
         mcp_auth_oidc_client_id="labmcp",
-        mcp_auth_oidc_client_secret="secret",
+        mcp_auth_oidc_client_secret=oidc_client_secret,
     )
 
     with pytest.raises(RuntimeError, match="MCP_AUTH_BASE_URL"):
@@ -191,7 +204,9 @@ def test_oidc_proxy_requires_config_and_client_credentials() -> None:
         )
 
 
-def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_oidc_proxy_derives_pocket_id_config_url(
+    monkeypatch: pytest.MonkeyPatch, oidc_client_secret: str
+) -> None:
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
             self.kwargs = kwargs
@@ -214,7 +229,7 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
         mcp_auth_mode="oidc_proxy",
         mcp_auth_base_url="https://labmcp.example.com/",
         mcp_auth_oidc_client_id="labmcp",
-        mcp_auth_oidc_client_secret="secret",
+        mcp_auth_oidc_client_secret=oidc_client_secret,
         mcp_auth_oidc_jwt_signing_key="signing-key",
         mcp_auth_oidc_forward_resource=True,
         mcp_auth_jwt_audience="labmcp",
@@ -227,7 +242,7 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
     assert provider.kwargs == {
         "config_url": "https://id.example.com/.well-known/openid-configuration",
         "client_id": "labmcp",
-        "client_secret": "secret",
+        "client_secret": oidc_client_secret,
         "base_url": "https://labmcp.example.com",
         "redirect_path": "/auth/callback",
         "required_scopes": ["openid", "profile"],
@@ -243,7 +258,9 @@ def test_oidc_proxy_derives_pocket_id_config_url(monkeypatch: pytest.MonkeyPatch
     assert provider.advertised_scopes == ["openid", "profile", "offline_access"]
 
 
-def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_oidc_proxy_supports_configured_extra_scopes(
+    monkeypatch: pytest.MonkeyPatch, oidc_client_secret: str
+) -> None:
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
             pass
@@ -265,7 +282,7 @@ def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyP
         mcp_auth_mode="oidc_proxy",
         mcp_auth_base_url="https://labmcp.example.com",
         mcp_auth_oidc_client_id="labmcp",
-        mcp_auth_oidc_client_secret="secret",
+        mcp_auth_oidc_client_secret=oidc_client_secret,
         mcp_auth_oidc_extra_scopes="offline_access,groups",
     )
 
@@ -278,7 +295,7 @@ def test_oidc_proxy_supports_configured_extra_scopes(monkeypatch: pytest.MonkeyP
 
 @pytest.mark.asyncio
 async def test_oidc_proxy_extracts_group_claim_from_access_token(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, oidc_client_secret: str
 ) -> None:
     class FakeOIDCProxy:
         def __init__(self, **kwargs: object) -> None:
@@ -296,19 +313,19 @@ async def test_oidc_proxy_extracts_group_claim_from_access_token(
             mcp_auth_mode="oidc_proxy",
             mcp_auth_base_url="https://labmcp.example.com",
             mcp_auth_oidc_client_id="labmcp",
-            mcp_auth_oidc_client_secret="secret",
+            mcp_auth_oidc_client_secret=oidc_client_secret,
         )
     )
 
-    token = "e30.eyJncm91cHMiOlsiYWRtaW4iXX0."
+    token = jwt_with_claims({"groups": ["admin"]})
     assert await provider._extract_upstream_claims({"access_token": token}) == {"groups": ["admin"]}
     assert await provider._extract_upstream_claims({"access_token": "opaque"}) is None
 
 
 def test_decode_jwt_claims_extracts_payload() -> None:
-    token = "eyJhbGciOiJub25lIn0.eyJncm91cHMiOlsiZ29kbW9kZSJdfQ."
+    token = jwt_with_claims({"groups": ["example"]})
 
-    assert _decode_jwt_claims(token) == {"groups": ["godmode"]}
+    assert _decode_jwt_claims(token) == {"groups": ["example"]}
 
 
 def test_decode_jwt_claims_ignores_opaque_tokens() -> None:

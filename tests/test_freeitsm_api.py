@@ -1,5 +1,6 @@
 import json
 import logging
+from secrets import token_urlsafe
 from types import SimpleNamespace
 
 import pytest
@@ -251,7 +252,7 @@ async def test_freeitsm_request_sends_the_api_key_as_a_bearer_token(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_freeitsm_key_is_absent_from_tool_schema_and_call_logs(monkeypatch, caplog) -> None:
-    secret = "fitsm_secret"
+    secret = token_urlsafe(16)
     operation = FreeITSMOperation("GET", "/api/v1/ping", "none")
     tool = _make_operation_tool(
         "get_ping",
